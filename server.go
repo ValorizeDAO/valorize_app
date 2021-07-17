@@ -2,11 +2,16 @@ package main
 
 import (
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
 	echo "github.com/labstack/echo/v4"
 	middleware "github.com/labstack/echo/v4/middleware"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 	"time"
+	"valorize.backend/config"
+	"valorize.backend/db"
+	"valorize.backend/db/models"
 )
 
 func login(c echo.Context) error {
@@ -18,13 +23,11 @@ func login(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 	_name := "Jon Snow"
-	_isAdmin := true
 	_expiration := time.Now().Add(time.Hour * 72).Unix()
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	claims := token.Claims.(jwt.MapClaims)
 	claims["name"] = _name
-	claims["admin"] = _isAdmin
 	claims["exp"] = _expiration
 
 	// Generate encoded token and send it as response.
@@ -46,6 +49,28 @@ func login(c echo.Context) error {
 	})
 }
 
+type RequestHandler struct {
+	db *gorm.DB
+}
+
+func (requestHandler *RequestHandler) register(c echo.Context) error {
+	username := c.FormValue("username")
+	email := c.FormValue("email")
+	password := c.FormValue("password")
+	hash, _ := bcrypt.GenerateFromPassword([]byte(password), 10)
+
+	user := models.User{
+		Email:    email,
+		Username: username,
+		Password: string(hash),
+	}
+	requestHandler.db.Create(user)
+	return c.JSON(http.StatusOK, map[string]string{
+		"Email": email,
+		"user":  username,
+	})
+}
+
 func accessible(c echo.Context) error {
 	return c.String(http.StatusOK, "Accessible")
 }
@@ -62,6 +87,10 @@ func writeCookie(c echo.Context) error {
 }
 
 func main() {
+	cfg := config.NewConfig()
+	db := db.Init(cfg)
+	rq := RequestHandler{db: db}
+
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -74,6 +103,8 @@ func main() {
 	e.Static("/*", "app/dist")
 	e.GET("/public", accessible)
 	e.POST("/login", login)
+	e.POST("/register", rq.register)
+
 	r := e.Group("/restricted")
 	r.Use(middleware.JWT([]byte("secret")))
 	r.GET("/test", restricted)
