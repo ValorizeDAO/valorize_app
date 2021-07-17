@@ -1,14 +1,12 @@
 package main
 
 import (
+	jwt "github.com/dgrijalva/jwt-go"
+	echo "github.com/labstack/echo/v4"
+	middleware "github.com/labstack/echo/v4/middleware"
 	"net/http"
 	"strconv"
 	"time"
-
-	jwt "github.com/dgrijalva/jwt-go"
-
-	echo "github.com/labstack/echo/v4"
-	middleware "github.com/labstack/echo/v4/middleware"
 )
 
 func login(c echo.Context) error {
@@ -42,8 +40,8 @@ func login(c echo.Context) error {
 	c.SetCookie(cookie)
 
 	return c.JSON(http.StatusOK, map[string]string{
-		"token": t,
-		"user": _name,
+		"token":   t,
+		"user":    _name,
 		"expires": strconv.Itoa(int(_expiration)),
 	})
 }
