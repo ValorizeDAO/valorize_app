@@ -3,7 +3,7 @@ package main
 import (
 	gm "github.com/ShkrutDenis/go-migrations"
 	gmStore "github.com/ShkrutDenis/go-migrations/store"
-	"valorize.backend/db/migrations/list"
+	"valorize-app/db/migrations/list"
 )
 
 func main() {

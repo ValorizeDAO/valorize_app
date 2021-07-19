@@ -17,6 +17,7 @@ func (m *CreateUserTable) Up(con *sqlx.DB) {
 	table.PrimaryKey("id")
 	table.String("name", 500).Nullable()
 	table.String("username", 500).Unique().NotNull()
+	table.String("email", 500).Nullable()
 	table.String("password", 1000).Nullable()
 	table.Column("deleted_at").Type("datetime").Nullable()
 	table.WithTimestamps()

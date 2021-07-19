@@ -1,4 +1,4 @@
-module valorize.backend
+module valorize-app
 
 go 1.14
 

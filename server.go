@@ -1,17 +1,18 @@
 package main
 
 import (
-	jwt "github.com/dgrijalva/jwt-go"
+	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
-	echo "github.com/labstack/echo/v4"
-	middleware "github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 	"time"
-	"valorize.backend/config"
-	"valorize.backend/db"
-	"valorize.backend/db/models"
+	"valorize-app/config"
+	"valorize-app/db"
+	"valorize-app/db/models"
 )
 
 func login(c echo.Context) error {
@@ -64,9 +65,22 @@ func (requestHandler *RequestHandler) register(c echo.Context) error {
 		Username: username,
 		Password: string(hash),
 	}
-	requestHandler.db.Create(user)
+
+	err := requestHandler.db.First(&user).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return c.JSON(http.StatusConflict, map[string]string{
+			"error": username + " already exists",
+		})
+	}
+
+	if requestHandler.db.Create(&user).Error != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Could not create user",
+		})
+	}
+
 	return c.JSON(http.StatusOK, map[string]string{
-		"Email": email,
+		"email": email,
 		"user":  username,
 	})
 }
@@ -88,8 +102,8 @@ func writeCookie(c echo.Context) error {
 
 func main() {
 	cfg := config.NewConfig()
-	db := db.Init(cfg)
-	rq := RequestHandler{db: db}
+	dbInstance := db.Init(cfg)
+	rq := RequestHandler{db: dbInstance}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
