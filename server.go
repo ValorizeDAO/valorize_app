@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -15,20 +16,30 @@ import (
 	"valorize-app/db/models"
 )
 
-func login(c echo.Context) error {
+func (requestHandler *RequestHandler) login(c echo.Context) error {
 	username := c.FormValue("username")
 	password := c.FormValue("password")
 
-	// Throws unauthorized error
-	if username != "jon" || password != "shhh!" {
+	user := models.User{}
+
+	err := requestHandler.db.First(&user, "username = ?", username).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return c.JSON(http.StatusConflict, map[string]string{
+			"error": username + " does not exist",
+		})
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
 		return echo.ErrUnauthorized
 	}
-	_name := "Jon Snow"
-	_expiration := time.Now().Add(time.Hour * 72).Unix()
+
+	_user := user.Username
+	_expiration := time.Now().Add(time.Hour * 144).Unix()
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	claims := token.Claims.(jwt.MapClaims)
-	claims["name"] = _name
+	claims["username"] = _user
 	claims["exp"] = _expiration
 
 	// Generate encoded token and send it as response.
@@ -45,7 +56,7 @@ func login(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"token":   t,
-		"user":    _name,
+		"user":    _user,
 		"expires": strconv.Itoa(int(_expiration)),
 	})
 }
@@ -89,15 +100,44 @@ func accessible(c echo.Context) error {
 	return c.String(http.StatusOK, "Accessible")
 }
 
+type Claims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
+}
+
 func restricted(c echo.Context) error {
+	cookie, err := c.Cookie("token")
+	fmt.Println("restricted check =================")
+	fmt.Println(cookie.Value)
+	if err != nil {
+		return err
+	}
 	user := c.Get("user").(*jwt.Token)
+	fmt.Println(user)
 	claims := user.Claims.(jwt.MapClaims)
-	name := claims["name"].(string)
+	name := claims["username"].(string)
 	return c.String(http.StatusOK, "Welcome "+name+"!")
 }
 
-func writeCookie(c echo.Context) error {
-	return c.String(http.StatusOK, "write a cookie")
+func validateJwtInCookie(c echo.Context) error {
+	cookie, err := c.Cookie("token")
+	if err != nil {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
+
+	claims := &Claims{}
+	fmt.Println("\n\n=================\nrestricted check")
+	fmt.Println(cookie.Value)
+	token, err := jwt.ParseWithClaims(cookie.Value, claims, func(token *jwt.Token) (interface{}, error) {
+		fmt.Println(token.Valid)
+		//TODO: get better key management for app
+		return []byte("secret"), nil
+	})
+	if token.Valid {
+		return c.String(http.StatusOK, "hello "+claims.Username)
+	} else {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
 }
 
 func main() {
@@ -112,16 +152,14 @@ func main() {
 		AllowOrigins: []string{"http://valorize.local:3000"},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
-	// Login route
 
 	e.Static("/*", "app/dist")
 	e.GET("/public", accessible)
-	e.POST("/login", login)
+	e.POST("/login", rq.login)
 	e.POST("/register", rq.register)
 
 	r := e.Group("/restricted")
-	r.Use(middleware.JWT([]byte("secret")))
-	r.GET("/test", restricted)
+	r.GET("/test", validateJwtInCookie)
 
 	api := e.Group("/api/v0")
 	api.GET("/healthcheck", func(c echo.Context) error {
