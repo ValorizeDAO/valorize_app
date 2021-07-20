@@ -132,7 +132,7 @@ func validateJwtInCookie(c echo.Context) error {
 func main() {
 	cfg := config.NewConfig()
 	dbInstance := db.Init(cfg)
-	rq := AuthHandler{db: dbInstance}
+	auth := AuthHandler{db: dbInstance}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -144,8 +144,8 @@ func main() {
 
 	e.Static("/*", "app/dist")
 	e.GET("/public", accessible)
-	e.POST("/login", rq.login)
-	e.POST("/register", rq.register)
+	e.POST("/login", auth.login)
+	e.POST("/register", auth.register)
 
 	r := e.Group("/restricted")
 	r.GET("/test", validateJwtInCookie)
