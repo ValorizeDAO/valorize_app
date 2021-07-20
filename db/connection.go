@@ -2,8 +2,9 @@ package db
 
 import (
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
-	"valorize.backend/config"
+	"valorize-app/config"
 )
 
 func Init(cfg *config.Config) *gorm.DB {
