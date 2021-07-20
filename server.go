@@ -16,13 +16,13 @@ import (
 	"valorize-app/db/models"
 )
 
-func (requestHandler *RequestHandler) login(c echo.Context) error {
+func (auth *AuthHandler) login(c echo.Context) error {
 	username := c.FormValue("username")
 	password := c.FormValue("password")
 
 	user := models.User{}
 
-	err := requestHandler.db.First(&user, "username = ?", username).Error
+	err := auth.db.First(&user, "username = ?", username).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.JSON(http.StatusConflict, map[string]string{
 			"error": username + " does not exist",
@@ -61,11 +61,11 @@ func (requestHandler *RequestHandler) login(c echo.Context) error {
 	})
 }
 
-type RequestHandler struct {
+type AuthHandler struct {
 	db *gorm.DB
 }
 
-func (requestHandler *RequestHandler) register(c echo.Context) error {
+func (auth *AuthHandler) register(c echo.Context) error {
 	username := c.FormValue("username")
 	email := c.FormValue("email")
 	password := c.FormValue("password")
@@ -76,16 +76,15 @@ func (requestHandler *RequestHandler) register(c echo.Context) error {
 		Username: username,
 		Password: string(hash),
 	}
-
-	err := requestHandler.db.First(&user).Error
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	checkIfUser := user
+	if auth.db.First(&checkIfUser).Error != nil {
 		return c.JSON(http.StatusConflict, map[string]string{
 			"error": username + " already exists",
 		})
 	}
-
-	if requestHandler.db.Create(&user).Error != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
+	fmt.Print(user.CreatedAt)
+	if auth.db.Create(&user).Error != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Could not create user",
 		})
 	}
@@ -106,14 +105,7 @@ type Claims struct {
 }
 
 func restricted(c echo.Context) error {
-	cookie, err := c.Cookie("token")
-	fmt.Println("restricted check =================")
-	fmt.Println(cookie.Value)
-	if err != nil {
-		return err
-	}
 	user := c.Get("user").(*jwt.Token)
-	fmt.Println(user)
 	claims := user.Claims.(jwt.MapClaims)
 	name := claims["username"].(string)
 	return c.String(http.StatusOK, "Welcome "+name+"!")
@@ -124,10 +116,7 @@ func validateJwtInCookie(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusUnauthorized, "Unauthorized")
 	}
-
 	claims := &Claims{}
-	fmt.Println("\n\n=================\nrestricted check")
-	fmt.Println(cookie.Value)
 	token, err := jwt.ParseWithClaims(cookie.Value, claims, func(token *jwt.Token) (interface{}, error) {
 		fmt.Println(token.Valid)
 		//TODO: get better key management for app
@@ -143,7 +132,7 @@ func validateJwtInCookie(c echo.Context) error {
 func main() {
 	cfg := config.NewConfig()
 	dbInstance := db.Init(cfg)
-	rq := RequestHandler{db: dbInstance}
+	rq := AuthHandler{db: dbInstance}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
