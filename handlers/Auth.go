@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"net/http"
 	"strconv"
 	"time"
@@ -86,7 +87,7 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusCreated, map[string]string{
 		"email": email,
 		"user":  username,
 	})
