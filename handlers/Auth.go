@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
@@ -11,6 +10,7 @@ import (
 	"strconv"
 	"time"
 	models "valorize-app/models"
+	"valorize-app/services/ethereum"
 )
 
 type AuthHandler struct {
@@ -53,11 +53,7 @@ func (auth *AuthHandler) Login(c echo.Context) error {
 		return err
 	}
 
-	cookie := new(http.Cookie)
-	cookie.Name = "token"
-	cookie.Value = t
-	cookie.Expires = time.Now().Add(144 * time.Hour)
-	cookie.HttpOnly = true
+	cookie := tokenCookie(t)
 	c.SetCookie(cookie)
 
 	return c.JSON(http.StatusCreated, map[string]string{
@@ -78,16 +74,27 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		Username: username,
 		Password: string(hash),
 	}
-	checkIfUser := user
-	if auth.DB.First(&checkIfUser).Error != nil {
-		return c.JSON(http.StatusConflict, map[string]string{
-			"error": username + " already exists",
-		})
-	}
-	fmt.Print(user.CreatedAt)
+
 	if auth.DB.Create(&user).Error != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Could not create user",
+		})
+	}
+
+	address, err := ethereum.NewKeystore(password)
+	wallet := models.Wallet{
+		Address: address,
+		UserId:  user.ID,
+	}
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Error creating ethereum wallet",
+		})
+	}
+	if auth.DB.Create(&wallet).Error != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Could not store wallet",
 		})
 	}
 
@@ -95,4 +102,13 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		"email": email,
 		"user":  username,
 	})
+}
+
+func tokenCookie(t string) *http.Cookie {
+	cookie := new(http.Cookie)
+	cookie.Name = "token"
+	cookie.Value = t
+	cookie.Expires = time.Now().Add(144 * time.Hour)
+	cookie.HttpOnly = true
+	return cookie
 }
