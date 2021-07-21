@@ -10,6 +10,7 @@ import (
 	"valorize-app/db"
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
+	"valorize-app/services/ethereum"
 )
 
 func accessible(c echo.Context) error {
@@ -28,6 +29,11 @@ func main() {
 	cfg := config.NewConfig()
 	dbInstance := db.Init(cfg)
 	auth := handlers.AuthHandler{DB: dbInstance}
+	ethInstance, err := ethereum.Connect()
+	if err != nil {
+		println("Error connecting to ethereum")
+	}
+	eth := handlers.EthHandler{Connection: ethInstance}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -41,6 +47,8 @@ func main() {
 	e.GET("/public", accessible)
 	e.POST("/login", auth.Login)
 	e.POST("/register", auth.Register)
+
+	e.GET("/eth", eth.Ping)
 
 	r := e.Group("/restricted", appmiddleware.AuthMiddleware)
 	r.GET("/test", restricted)
