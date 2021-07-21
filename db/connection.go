@@ -21,6 +21,7 @@ func Init(cfg *config.Config) *gorm.DB {
 	if err != nil {
 		panic(err.Error())
 	}
+	db.LogMode(true)
 
 	//userSeeder := seeders.NewUserSeeder(db)
 	//userSeeder.SetUsers()

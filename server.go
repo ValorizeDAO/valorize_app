@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -16,7 +17,8 @@ func accessible(c echo.Context) error {
 }
 
 func restricted(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
+	user := c.Get("username").(*jwt.Token)
+	fmt.Print("\n\n" + string(user.Raw) + "\n\n")
 	claims := user.Claims.(jwt.MapClaims)
 	name := claims["username"].(string)
 	return c.String(http.StatusOK, "Welcome "+name+"!")

@@ -18,6 +18,7 @@ type AuthHandler struct {
 }
 
 func (auth *AuthHandler) Login(c echo.Context) error {
+
 	username := c.FormValue("username")
 	password := c.FormValue("password")
 
@@ -32,7 +33,10 @@ func (auth *AuthHandler) Login(c echo.Context) error {
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return echo.ErrUnauthorized
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "incorrect password for " + username,
+		})
+
 	}
 
 	_user := user.Username
@@ -53,9 +57,10 @@ func (auth *AuthHandler) Login(c echo.Context) error {
 	cookie.Name = "token"
 	cookie.Value = t
 	cookie.Expires = time.Now().Add(144 * time.Hour)
+	cookie.HttpOnly = true
 	c.SetCookie(cookie)
 
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusCreated, map[string]string{
 		"token":   t,
 		"user":    _user,
 		"expires": strconv.Itoa(int(_expiration)),
@@ -86,7 +91,7 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusCreated, map[string]string{
 		"email": email,
 		"user":  username,
 	})
