@@ -33,7 +33,10 @@ func main() {
 	if err != nil {
 		println("Error connecting to ethereum")
 	}
-	eth := handlers.EthHandler{Connection: ethInstance}
+	eth := handlers.EthHandler{
+		Connection: ethInstance,
+		DB:         dbInstance,
+	}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -50,8 +53,8 @@ func main() {
 
 	e.GET("/eth", eth.Ping)
 
-	r := e.Group("/restricted", appmiddleware.AuthMiddleware)
-	r.GET("/test", restricted)
+	r := e.Group("/admin", appmiddleware.AuthMiddleware)
+	r.POST("/wallet", eth.CreateWalletFromRequest)
 
 	api := e.Group("/api/v0")
 	api.GET("/healthcheck", func(c echo.Context) error {

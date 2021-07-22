@@ -2,6 +2,7 @@ package ethereum
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
@@ -19,9 +20,9 @@ func Connect() (*ethclient.Client, error) {
 	return client, err
 }
 
-func NewKeystore(password string) (string, error) {
+func NewKeystore(password string) (accounts.Account, error) {
 	ks := keystore.NewKeyStore("./wallets", keystore.StandardScryptN, keystore.StandardScryptP)
 	account, err := ks.NewAccount(password)
 
-	return account.Address.Hex(), err
+	return account, err
 }

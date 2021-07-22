@@ -16,6 +16,7 @@ func (m *CreateWalletTable) Up(con *sqlx.DB) {
 	table.Column("id").Type("int unsigned").Autoincrement()
 	table.PrimaryKey("id")
 	table.String("address", 1000).NotNull()
+	table.String("raw", 1000).NotNull()
 	table.Column("user_id").Type("int unsigned")
 	table.Column("is_contract").Type("bool")
 
