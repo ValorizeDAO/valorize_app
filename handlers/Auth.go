@@ -2,15 +2,13 @@ package handlers
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
-	"time"
 	models "valorize-app/models"
-	"valorize-app/services/ethereum"
+	"valorize-app/services"
 )
 
 type AuthHandler struct {
@@ -18,10 +16,8 @@ type AuthHandler struct {
 }
 
 func (auth *AuthHandler) Login(c echo.Context) error {
-
 	username := c.FormValue("username")
 	password := c.FormValue("password")
-
 	user := models.User{}
 
 	err := auth.DB.First(&user, "username = ?", username).Error
@@ -39,27 +35,20 @@ func (auth *AuthHandler) Login(c echo.Context) error {
 
 	}
 
-	_user := user.Username
-	_expiration := time.Now().Add(time.Hour * 144).Unix()
-	token := jwt.New(jwt.SigningMethodHS256)
-
-	claims := token.Claims.(jwt.MapClaims)
-	claims["username"] = _user
-	claims["exp"] = _expiration
-
-	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("secret"))
+	token, expiration, err := services.NewToken(user)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not create token",
+		})
 	}
 
-	cookie := tokenCookie(t)
+	cookie := services.CreateTokenCookie(token)
 	c.SetCookie(cookie)
 
 	return c.JSON(http.StatusCreated, map[string]string{
-		"token":   t,
-		"user":    _user,
-		"expires": strconv.Itoa(int(_expiration)),
+		"token":   token,
+		"user":    user.Username,
+		"expires": strconv.FormatInt(expiration, 10),
 	})
 }
 
@@ -81,34 +70,8 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		})
 	}
 
-	address, err := ethereum.NewKeystore(password)
-	wallet := models.Wallet{
-		Address: address,
-		UserId:  user.ID,
-	}
-
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Error creating ethereum wallet",
-		})
-	}
-	if auth.DB.Create(&wallet).Error != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Could not store wallet",
-		})
-	}
-
 	return c.JSON(http.StatusCreated, map[string]string{
 		"email": email,
 		"user":  username,
 	})
-}
-
-func tokenCookie(t string) *http.Cookie {
-	cookie := new(http.Cookie)
-	cookie.Name = "token"
-	cookie.Value = t
-	cookie.Expires = time.Now().Add(144 * time.Hour)
-	cookie.HttpOnly = true
-	return cookie
 }
