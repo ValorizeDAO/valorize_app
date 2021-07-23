@@ -9,6 +9,7 @@ import (
 	"strconv"
 	models "valorize-app/models"
 	"valorize-app/services"
+	"valorize-app/services/ethereum"
 )
 
 type AuthHandler struct {
@@ -69,6 +70,8 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 			"error": "Could not create user",
 		})
 	}
+
+	go ethereum.StoreUserKeystore(password, user.ID, auth.DB)
 
 	return c.JSON(http.StatusCreated, map[string]string{
 		"email": email,
