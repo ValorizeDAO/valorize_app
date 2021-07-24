@@ -13,7 +13,13 @@ import (
 )
 
 type AuthHandler struct {
-	DB *gorm.DB
+	server *Server
+}
+
+func NewAuthHandler(s *Server) *AuthHandler {
+	return &AuthHandler{
+		server: s,
+	}
 }
 
 func (auth *AuthHandler) Login(c echo.Context) error {
@@ -21,7 +27,7 @@ func (auth *AuthHandler) Login(c echo.Context) error {
 	password := c.FormValue("password")
 	user := models.User{}
 
-	err := auth.DB.First(&user, "username = ?", username).Error
+	err := auth.server.DB.First(&user, "username = ?", username).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.JSON(http.StatusConflict, map[string]string{
 			"error": username + " does not exist",
@@ -65,13 +71,13 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		Password: string(hash),
 	}
 
-	if auth.DB.Create(&user).Error != nil {
+	if auth.server.DB.Create(&user).Error != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Could not create user",
 		})
 	}
 
-	go ethereum.StoreUserKeystore(password, user.ID, auth.DB)
+	go ethereum.StoreUserKeystore(password, user.ID, auth.server.DB)
 
 	return c.JSON(http.StatusCreated, map[string]string{
 		"email": email,
