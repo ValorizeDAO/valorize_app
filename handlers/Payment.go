@@ -1,84 +1,26 @@
-package main
+package handlers
 
 import (
   "encoding/json"
   "fmt"
-  "github.com/dgrijalva/jwt-go"
   "github.com/labstack/echo/v4"
-  "github.com/labstack/echo/v4/middleware"
   "github.com/stripe/stripe-go/v72"
   "github.com/stripe/stripe-go/v72/checkout/session"
   "github.com/stripe/stripe-go/v72/webhook"
   "io/ioutil"
   "net/http"
   "os"
-  "valorize-app/config"
-  "valorize-app/db"
-  "valorize-app/handlers"
-  appmiddleware "valorize-app/middleware"
-  "valorize-app/services/ethereum"
 )
 
-func accessible(c echo.Context) error {
-  return c.String(http.StatusOK, "Accessible")
+type PaymentHandler struct{
+  Server *Server
 }
 
-func restricted(c echo.Context) error {
-  user := c.Get("username").(*jwt.Token)
-  fmt.Print("\n\n" + string(user.Raw) + "\n\n")
-  claims := user.Claims.(jwt.MapClaims)
-  name := claims["username"].(string)
-  return c.String(http.StatusOK, "Welcome "+name+"!")
+func NewPaymentHandler(s *Server) *PaymentHandler {
+  return &PaymentHandler{s }
 }
 
-func main() {
-  cfg := config.NewConfig()
-  dbInstance := db.Init(cfg)
-  ethInstance, err := ethereum.Connect()
-  stripe.Key = "sk_test_51JGBbjBhSkl0qU1AdCzBjVv6N0Z2xyYqHTfYPOECkuFdl4lA9fyLIz6lHrKP702wlybuwcfh1rB7ljG8zUzzta7k00ytyRYt2d"
-  if err != nil {
-    println("Error connecting to ethereum")
-  }
-
-  auth := handlers.AuthHandler{DB: dbInstance}
-  eth := handlers.EthHandler{
-    Connection: ethInstance,
-    DB:         dbInstance,
-  }
-
-  e := echo.New()
-  e.Use(middleware.Logger())
-  e.Use(middleware.Recover())
-  e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-    AllowOrigins: []string{"http://valorize.local:3000"},
-    AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
-  }))
-
-  //e.Static("/*", "app/dist")
-  e.GET("/public", accessible)
-  e.GET("/success", func(c echo.Context) error {
-    return c.String(http.StatusOK, "Success")
-  })
-  e.GET("/cancel", func(c echo.Context) error {
-    return c.String(http.StatusOK, "Payment error")
-  })
-  e.POST("/login", auth.Login)
-  e.POST("/register", auth.Register)
-  e.POST("/create-checkout-session", createCheckoutSession)
-  e.GET("/eth", eth.Ping)
-  e.POST("/payments/successhook", onPaymentAccepted)
-
-  r := e.Group("/admin", appmiddleware.AuthMiddleware)
-  r.POST("/wallet", eth.CreateWalletFromRequest)
-
-  api := e.Group("/api/v0")
-  api.GET("/healthcheck", func(c echo.Context) error {
-    return c.String(http.StatusOK, "All systems GO")
-  })
-  e.Logger.Fatal(e.Start(":1323"))
-}
-
-func createCheckoutSession(c echo.Context) (err error) {
+func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) (err error) {
   params := &stripe.CheckoutSessionParams{
     PaymentMethodTypes: stripe.StringSlice([]string{
       "card",
@@ -113,7 +55,7 @@ func createCheckoutSession(c echo.Context) (err error) {
 
   return c.Redirect(http.StatusSeeOther, s.URL)
 }
-func FulfillOrder(session stripe.CheckoutSession) {
+func fulfillOrder(session stripe.CheckoutSession) {
   fmt.Println(session.Customer)
   e, err := json.Marshal(session.Customer)
   if err != nil {
@@ -124,7 +66,7 @@ func FulfillOrder(session stripe.CheckoutSession) {
   fmt.Println("\n\n==============\n\n    TADA    \n\n============")
 }
 
-func onPaymentAccepted(c echo.Context) error {
+func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
   const MaxBodyBytes = int64(65536)
   requestBody := http.MaxBytesReader(c.Response().Writer, c.Request().Body, MaxBodyBytes)
 
@@ -156,7 +98,7 @@ func onPaymentAccepted(c echo.Context) error {
         "error": fmt.Sprintf("Error parsing webhook JSON: %v\n", err),
       })
     }
-    FulfillOrder(session)
+    fulfillOrder(session)
   }
 
   return c.JSON(http.StatusOK, map[string]string{
