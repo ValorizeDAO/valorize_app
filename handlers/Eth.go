@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"valorize-app/services"
@@ -11,12 +9,15 @@ import (
 )
 
 type EthHandler struct {
-	Connection *ethclient.Client
-	DB         *gorm.DB
+	server *Server
+}
+
+func NewEthHandler(s *Server) *EthHandler {
+	return &EthHandler{s}
 }
 
 func (eth *EthHandler) Ping(c echo.Context) error {
-	connection, err := eth.Connection.NetworkID(context.Background())
+	connection, err := eth.server.BlockChain.NetworkID(context.Background())
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -35,8 +36,8 @@ func (eth *EthHandler) CreateWalletFromRequest(c echo.Context) error {
 			"error": "password required to generate wallet",
 		})
 	}
-	user, _ := services.AuthUser(c, *eth.DB)
-	address, err := ethereum.StoreUserKeystore(password, user.ID, eth.DB)
+	user, _ := services.AuthUser(c, *eth.server.DB)
+	address, err := ethereum.StoreUserKeystore(password, user.ID, eth.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusOK, map[string]string{
 			"error": err.Error(),

@@ -13,6 +13,7 @@ require (
 	github.com/labstack/echo/v4 v4.3.0
 	github.com/selvatico/go-mocket v1.0.7 // indirect
 	github.com/stretchr/testify v1.7.0
+	github.com/stripe/stripe-go/v72 v72.58.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0
 )

@@ -5,12 +5,11 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/stripe/stripe-go/v72"
 	"net/http"
 	"valorize-app/config"
-	"valorize-app/db"
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
-	"valorize-app/services/ethereum"
 )
 
 func accessible(c echo.Context) error {
@@ -26,19 +25,15 @@ func restricted(c echo.Context) error {
 }
 
 func main() {
-	cfg := config.NewConfig()
-	dbInstance := db.Init(cfg)
-	auth := handlers.AuthHandler{DB: dbInstance}
-	ethInstance, err := ethereum.Connect()
-	if err != nil {
-		println("Error connecting to ethereum")
-	}
-	eth := handlers.EthHandler{
-		Connection: ethInstance,
-		DB:         dbInstance,
-	}
 
-	e := echo.New()
+	cfg := config.NewConfig()
+	s := handlers.NewServer(cfg)
+	stripe.Key = "sk_test_51JGBbjBhSkl0qU1AdCzBjVv6N0Z2xyYqHTfYPOECkuFdl4lA9fyLIz6lHrKP702wlybuwcfh1rB7ljG8zUzzta7k00ytyRYt2d"
+	e := *s.Echo
+	payment := handlers.NewPaymentHandler(s)
+	auth := handlers.NewAuthHandler(s)
+	eth := handlers.NewEthHandler(s)
+
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -48,10 +43,17 @@ func main() {
 
 	e.Static("/*", "app/dist")
 	e.GET("/public", accessible)
+	e.GET("/success", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Success")
+	})
+	e.GET("/cancel", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Payment error")
+	})
 	e.POST("/login", auth.Login)
 	e.POST("/register", auth.Register)
-
+	e.POST("/create-checkout-session", payment.CreateCheckoutSession)
 	e.GET("/eth", eth.Ping)
+	e.POST("/payments/successhook", payment.OnPaymentAccepted)
 
 	r := e.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
