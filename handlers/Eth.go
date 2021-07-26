@@ -39,11 +39,25 @@ func (eth *EthHandler) CreateWalletFromRequest(c echo.Context) error {
 	user, _ := services.AuthUser(c, *eth.server.DB)
 	address, err := ethereum.StoreUserKeystore(password, user.ID, eth.server.DB)
 	if err != nil {
-		return c.JSON(http.StatusOK, map[string]string{
+		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]string{
-		"status": address,
+		"status":  "ok",
+		"address": address,
+	})
+}
+
+func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
+	addr, _, _, err := ethereum.LaunchContract(eth.server.BlockChain, "CreatorToken", "CTKN")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "ok",
+		"address": addr.String(),
 	})
 }
