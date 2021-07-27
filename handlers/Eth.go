@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
 )
@@ -39,11 +40,47 @@ func (eth *EthHandler) CreateWalletFromRequest(c echo.Context) error {
 	user, _ := services.AuthUser(c, *eth.server.DB)
 	address, err := ethereum.StoreUserKeystore(password, user.ID, eth.server.DB)
 	if err != nil {
-		return c.JSON(http.StatusOK, map[string]string{
+		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]string{
-		"status": address,
+		"status":  "ok",
+		"address": address,
+	})
+}
+
+func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
+	addr, _, _, err := ethereum.LaunchContract(eth.server.BlockChain, "CreatorToken", "CTKN")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	user, _ := services.AuthUser(c, *eth.server.DB)
+	creatorToken := models.Wallet{
+		UserId:     user.ID,
+		Address:    addr.String(),
+		IsContract: true,
+	}
+
+	err = eth.server.DB.Create(&creatorToken).Error
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not store contract information: " + err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]map[string]string{
+		"response": {
+			"status": "ok",
+		},
+		"token": {
+			"name":    "CreatorToken",
+			"ticker":  "CTKN",
+			"address": addr.String(),
+		},
 	})
 }

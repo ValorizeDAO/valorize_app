@@ -72,8 +72,8 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 	}
 
 	if auth.server.DB.Create(&user).Error != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Could not create user",
+		return c.JSON(http.StatusConflict, map[string]string{
+			"error": user.Username + " already exists",
 		})
 	}
 
