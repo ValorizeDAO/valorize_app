@@ -56,6 +56,7 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 			"error": err.Error(),
 		})
 	}
+
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":  "ok",
 		"address": addr.String(),

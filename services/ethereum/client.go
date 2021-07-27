@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jinzhu/gorm"
 	"io/ioutil"
@@ -64,14 +63,18 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 }
 
 func LaunchContract(client *ethclient.Client, name string, ticker string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
-	privateKey, err := crypto.GenerateKey()
+	hotWalletAddress := os.Getenv("HOTWALLET")
+	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
+	hotWalletBlob, err := ioutil.ReadFile("./wallets/hot/" + hotWalletAddress)
+	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
+
 	if err != nil {
 		panic(err)
 	}
-	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(5777))
-	auth.Nonce = big.NewInt(int64(000))
+
+	auth, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(5777))
 	auth.Value = big.NewInt(0)              // in wei
-	auth.GasLimit = uint64(300000)          // in units
+	auth.GasLimit = uint64(3000000)         // in units
 	auth.GasPrice = big.NewInt(30000000000) // 30 wei
 
 	address, tx, instance, err := contracts.DeployCreatorToken(auth, client, big.NewInt(1000), name, ticker)

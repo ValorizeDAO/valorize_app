@@ -57,6 +57,7 @@ func main() {
 
 	r := e.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
+	r.POST("/deploy", eth.DeployCreatorToken)
 
 	api := e.Group("/api/v0")
 	api.GET("/healthcheck", func(c echo.Context) error {
