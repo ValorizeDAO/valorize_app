@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Dashboard from "../views/Dashboard.vue";
 import Login from "../views/Login.vue";
-import { isAuthenticated } from "../services/authentication";
+import store from "../vuex/vuex";
 
 const routes = [
   {
@@ -24,6 +24,7 @@ router.beforeEach((to, from, next) => {
   const publicRoutes = ["Login", "Register"];
   let { name } = to;
   name = name?.toString() || "";
+  const isAuthenticated = store.state.authenticated;
   if (!publicRoutes.includes(name) && !isAuthenticated) next({ name: "Login" });
   else {
     console.log("going to next");

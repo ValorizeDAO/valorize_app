@@ -1,11 +1,13 @@
 <template>
-  <main>
-    <nav class="p-4 bg-white border-b-2 border-black">
+  <main class="min-h-screen">
+    <nav class="h-20 bg-white border-b-2 border-black absolute w-screen flex items-center pl-6">
       <router-link to="/">
         <img src="./assets/logo_large.png" alt="Valorize" class="h-8" />
       </router-link>
     </nav>
-    <router-view />
+    <div class="pt-20">
+      <router-view />
+    </div>
   </main>
 </template>
 
@@ -17,5 +19,5 @@ export default defineComponent({
 });
 </script>
 
-<style>
+<style lang="postcss">
 </style>
