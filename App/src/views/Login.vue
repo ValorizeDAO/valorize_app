@@ -6,19 +6,19 @@
     <input type="password" name="password" class="border border-gray-700 p-2" id="password" v-model="password">
     <button class="px-4 py-2 mt-4 cursor-pointer bg-gray-100">Submit</button>
   </form>
-  <div class="mt-8">
-  Or: <br>
-  <metamask-login></metamask-login>
-  </div>
+  <!-- <div class="mt-8"> -->
+  <!-- Or: <br> -->
+  <!-- <metamask-login></metamask-login> -->
+  <!-- </div> -->
 </div>
 </template>
 
 <script lang="ts">
 import { ref, defineComponent } from "vue";
-import MetamaskLogin from "../components/MetamaskLogin.vue"
+// import MetamaskLogin from "../components/MetamaskLogin.vue"
 export default defineComponent({
-  name: "Home",
-  components: {MetamaskLogin},
+  name: "Login",
+  // components: {MetamaskLogin},
   props: {
 
   },
@@ -46,6 +46,9 @@ export default defineComponent({
     }
     return { name, password, sendLogin };
   },
+  mounted: () => {
+    console.log("mounted");
+  }
 });
 </script>
 
