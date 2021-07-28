@@ -84,3 +84,19 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		"user":  username,
 	})
 }
+
+func (auth *AuthHandler) Show(c echo.Context) error {
+	username := c.Param("username")
+	user, err := models.GetUserByUsername(username, *auth.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find " + user.Username,
+		})
+	}
+	publicData := map[string]string{
+		"username": user.Username,
+		"name":     user.Name,
+		"id":       strconv.Itoa(int(user.ID)),
+	}
+	return c.JSON(http.StatusOK, publicData)
+}
