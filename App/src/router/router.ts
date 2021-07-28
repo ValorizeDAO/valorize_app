@@ -1,8 +1,8 @@
-import { createRouter, createWebHistory } from "vue-router";
-import Dashboard from "../views/Dashboard.vue";
-import Login from "../views/Login.vue";
-import Register from "../views/Register.vue";
-import store from "../vuex/vuex";
+import { createRouter, createWebHistory } from "vue-router"
+import Dashboard from "../views/Dashboard.vue"
+import Login from "../views/Login.vue"
+import Register from "../views/Register.vue"
+import store from "../vuex/vuex"
 
 const routes = [
   {
@@ -20,22 +20,22 @@ const routes = [
     name: "Register",
     component: Register,
   },
-];
+]
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
 router.beforeEach((to, from, next) => {
-  const publicRoutes = ["Login", "Register"];
-  let { name } = to;
-  name = name?.toString() || "";
-  const isAuthenticated = store.state.authenticated;
-  if (!publicRoutes.includes(name) && !isAuthenticated) next({ name: "Login" });
+  const publicRoutes = ["Login", "Register"]
+  let { name } = to
+  name = name?.toString() || ""
+  const isAuthenticated = store.state.authenticated
+  if (!publicRoutes.includes(name) && !isAuthenticated) next({ name: "Login" })
   else {
-    console.log("going to next");
-    next();
+    console.log("going to next")
+    next()
   }
-});
+})
 
-export default router;
+export default router

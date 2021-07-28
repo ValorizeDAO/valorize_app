@@ -3,7 +3,6 @@
     <div class="max-w-sm mx-auto pt-24 px-6 md:px-0">
       <h1 class="font-black text-3xl">Register</h1>
       <div class="my-8">
-        {{ status }}
         <form @submit.prevent="sendLogin" class="my-12">
           <label for="name" class="">
             <span class="text-xl font-black">Email</span>
@@ -26,18 +25,27 @@
           </label>
           <input
             type="text"
-            name="name"
+            name="username"
             id="name"
-            class="
-              p-2
-              mb-12
-              w-full
-              border-0 border-b-2 border-black
-              bg-purple-50
-            "
-            v-model="name"
+            class="p-2 w-full border-0 border-b-2 border-black bg-purple-50"
+            :value="displayValue"
+            @input="debounceListener"
           />
-          <label for="password" class="mt-24">
+          <div class="text-sm h-12">
+            <transition name="fade" mode="out-in">
+              <div
+                v-if="debouncedValue.length > 0"
+                :class="{ 'text-red-700': !userNameAvailable }"
+              >
+                {{
+                  userNameAvailable
+                    ? debouncedValue + " is available"
+                    : " * " + debouncedValue + " is not available"
+                }}
+              </div>
+            </transition>
+          </div>
+          <label for="password" class="mt-36">
             <span class="text-xl font-black">Password</span>
           </label>
           <input
@@ -59,7 +67,7 @@
           </label>
           <input
             type="password"
-            name="password"
+            name="password2"
             class="p-2 w-full border-0 border-b-2 border-black bg-purple-50"
             id="password"
             v-model="passwordVerify"
@@ -68,7 +76,7 @@
           <div class="mt-20">
             <transition name="fade" mode="out-in">
               <div v-if="status === 'pending'">
-                <SvgLoader fill="#cecece"  class="h-12 mx-auto"></SvgLoader>
+                <SvgLoader fill="#cecece" class="h-12 mx-auto"></SvgLoader>
               </div>
               <input
                 v-else-if="['init', 'error', 'conflict'].includes(status)"
@@ -90,34 +98,62 @@
 </template>
 
 <script lang="ts">
-import { ref, defineComponent, computed } from "vue";
+import { ref, defineComponent, computed, Ref } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
-// import MetamaskLogin from "../components/MetamaskLogin.vue"
-import SvgLoader from "../components/SvgLoader.vue"
+import SvgLoader from "../components/SvgLoader.vue";
+import useDebounced from "../composed/useDebounced";
+
 export default defineComponent({
   name: "Register",
-  components: {SvgLoader},
+  components: { SvgLoader },
   setup: () => {
     const requestStatuses = ["init", "pending", "conflict", "error", "success"];
     const store = useStore();
     const router = useRouter();
-    const name = ref("");
     const email = ref("");
+    const username = ref("");
     const password = ref("");
     const passwordVerify = ref("");
     const status = ref(requestStatuses[0]);
+    const userNameAvailable = ref(true);
+
     const ready = computed(() => {
       const passwordIsNotEmpty =
         password.value != "" && passwordVerify.value != "";
-      return passwordIsNotEmpty && password.value === passwordVerify.value;
+      const passwordsMatch = password.value === passwordVerify.value;
+      const emailIsNotEmpty = email.value !== "";
+
+      return (
+        userNameAvailable.value &&
+        passwordIsNotEmpty &&
+        passwordsMatch &&
+        emailIsNotEmpty
+      );
     });
+
+    async function fetchUserName(usernameToTest: Ref<string>) {
+      username.value = usernameToTest.value;
+      console.log('test')
+      fetch(import.meta.env.VITE_BACKEND_URL + "/user/" + usernameToTest.value)
+        .then((response) => {
+          console.log({ response });
+          if (response.status !== 200) {
+            userNameAvailable.value = true;
+          } else {
+            userNameAvailable.value = false;
+          }
+          return response.json();
+        })
+        .then((result) => console.log(result))
+        .catch((error) => console.log(error));
+    }
 
     async function sendLogin() {
       status.value = requestStatuses[1];
 
       const formdata = new FormData();
-      formdata.append("username", name.value);
+      formdata.append("username", username.value);
       formdata.append("password", password.value);
       formdata.append("email", email.value);
 
@@ -141,14 +177,23 @@ export default defineComponent({
         })
         .then((result) => {
           if (!result.error) {
-            store.state.authenticated = true;
+            store.state.commit("authenticated", true);
             router.push("/");
           }
         })
         .catch((error) => console.log("error", error));
     }
 
-    return { name, email, password, passwordVerify, status, ready, sendLogin };
+    return {
+      ...useDebounced(2000, fetchUserName),
+      email,
+      password,
+      passwordVerify,
+      status,
+      ready,
+      userNameAvailable,
+      sendLogin,
+    };
   },
 });
 </script>
