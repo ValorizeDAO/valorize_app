@@ -22,7 +22,7 @@ exports[`Register.vue renders as expected 1`] = `
               border-0 border-b-2 border-black
               bg-purple-50
               mb-12
-            " id="password"><br><label for="password" class="mt-24"><span class="text-xl font-black">Re-Enter Password</span></label><input type="password" name="password" class="p-2 w-full border-0 border-b-2 border-black bg-purple-50" id="password"><br>
+            " id="password"><br><label for="password" class="mt-24"><span class="text-xl font-black">Re-Enter Password</span></label><input type="password" name="password2" class="p-2 w-full border-0 border-b-2 border-black bg-purple-50" id="password"><br>
         <div class="mt-20">
           <transition-stub><input type="submit" class="px-4 py-2 border-2 rounded-md font-black w-full cursor-not-allowed text-gray-400" disabled=""></transition-stub>
         </div>

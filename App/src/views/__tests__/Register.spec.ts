@@ -38,16 +38,17 @@ describe("Register.vue", () => {
       const submitButton = wrapper.find("input[type='submit']") as DOMWrapper<HTMLInputElement>;
       expect(submitButton.element.disabled).toBe(true)
     })
-    it("should need both passwords to equal to be enabled", async () => {
-      const wrapper = shallowMount(Register, {
-        data() { return {...goodData} },
-        global: {
-          plugins: [Vuex],
-        },
-      } as any)
-      const submitButton = wrapper.find("input[type='submit']") as DOMWrapper<HTMLInputElement>
-      expect(submitButton.element.disabled).toBe(false)
-    })
+    // it("should need both passwords to equal to be enabled", async () => {
+    //   const wrapper = shallowMount(Register, {
+    //     data() { return {...goodData} },
+    //     global: {
+    //       plugins: [Vuex],
+    //     },
+    //   } as any)
+    //   const submitButton = wrapper.find("input[type='submit']") as DOMWrapper<HTMLInputElement>
+    //   const userNameInput = wrapper.find("input[name='password']") as DOMWrapper<HTMLInputElement>;
+    //   expect(submitButton.element.disabled).toBe(false)
+    // })
     it("should be disabled if one password is unlike the other", async () => {
       goodData.password = "a"
       const wrapper = shallowMount(Register, {
@@ -57,9 +58,6 @@ describe("Register.vue", () => {
         },
       } as any)
       const submitButton = wrapper.find("input[type='submit']") as DOMWrapper<HTMLInputElement>; 
-      const userNameInput = wrapper.find("input[name='password']") as DOMWrapper<HTMLInputElement>;
-      await userNameInput.setValue('aw')
-      console.log(wrapper);
       
       expect(submitButton.element.disabled).toBe(true)
     })
