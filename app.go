@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/stripe/stripe-go/v72"
@@ -11,18 +9,6 @@ import (
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
 )
-
-func accessible(c echo.Context) error {
-	return c.String(http.StatusOK, "Accessible")
-}
-
-func restricted(c echo.Context) error {
-	user := c.Get("username").(*jwt.Token)
-	fmt.Print("\n\n" + string(user.Raw) + "\n\n")
-	claims := user.Claims.(jwt.MapClaims)
-	name := claims["username"].(string)
-	return c.String(http.StatusOK, "Welcome "+name+"!")
-}
 
 func main() {
 
@@ -39,32 +25,29 @@ func main() {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"http://valorize.local:3000"},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+		AllowCredentials: true,
 	}))
 
 	e.Static("/*", "app/dist")
-	e.GET("/public", accessible)
 	e.GET("/success", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Success")
 	})
 	e.GET("/cancel", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Payment error")
 	})
-
 	e.GET("/user/:username", auth.Show)
-
 	e.POST("/login", auth.Login)
+	e.GET("/logout", auth.Logout)
 	e.POST("/register", auth.Register)
 	e.POST("/create-checkout-session", payment.CreateCheckoutSession)
 	e.GET("/eth", eth.Ping)
 	e.POST("/payments/successhook", payment.OnPaymentAccepted)
 
-	r := e.Group("/admin", appmiddleware.AuthMiddleware)
-	r.POST("/wallet", eth.CreateWalletFromRequest)
-	r.POST("/deploy", eth.DeployCreatorToken)
-
 	api := e.Group("/api/v0")
-	api.GET("/healthcheck", func(c echo.Context) error {
-		return c.String(http.StatusOK, "All systems GO")
-	})
+		api.GET("/me", auth.ShowUser, appmiddleware.AuthMiddleware)
+
+	r := api.Group("/admin", appmiddleware.AuthMiddleware)
+		r.POST("/wallet", eth.CreateWalletFromRequest)
+		r.POST("/deploy", eth.DeployCreatorToken)
 	e.Logger.Fatal(e.Start(":1323"))
 }
