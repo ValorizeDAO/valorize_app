@@ -49,6 +49,9 @@ func main() {
 	e.GET("/cancel", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Payment error")
 	})
+
+	e.GET("/user/:username", auth.Show)
+
 	e.POST("/login", auth.Login)
 	e.POST("/register", auth.Register)
 	e.POST("/create-checkout-session", payment.CreateCheckoutSession)

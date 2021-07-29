@@ -52,7 +52,7 @@
       "object-curly-spacing": ["error", "always"],
       "prefer-const": "error",
       "quotes": ["error", "double"],
-      "semi": ["error", "always"],
+      "semi": ["error", "never"],
       "space-before-function-paren": ["error", {
         "anonymous": "always",
         "named": "never",
