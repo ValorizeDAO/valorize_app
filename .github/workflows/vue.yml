@@ -33,4 +33,5 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run Tests
         run: |
+          cd App
           npm run test:unit
