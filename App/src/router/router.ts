@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router"
+import auth from "../services/authentication"
 import Dashboard from "../views/Dashboard.vue"
 import Login from "../views/Login.vue"
 import Register from "../views/Register.vue"
@@ -26,16 +27,23 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const publicRoutes = ["Login", "Register"]
   let { name } = to
   name = name?.toString() || ""
   const isAuthenticated = store.state.authenticated
-  if (!publicRoutes.includes(name) && !isAuthenticated) next({ name: "Login" })
-  else {
-    console.log("going to next")
-    next()
+  if (!publicRoutes.includes(name) && !isAuthenticated) {
+    store.state.checkingAuth = true
+    const { isLoggedIn, user } = await auth.isLoggedIn()
+    if (!isLoggedIn) {
+      store.state.checkingAuth = false
+      next({ name: "Login" })
+    } else {
+      store.commit("setUser", user)
+      next()
+    }
   }
+  next()
 })
 
 export default router

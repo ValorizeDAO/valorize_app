@@ -1,5 +1,6 @@
-import { createStore } from "vuex"
-import { User } from "../models/user"
+import { createStore, ActionContext } from "vuex"
+import { User, emptyUser } from "../models/user"
+import auth from "../services/authentication"
 
 export default createStore({
   state() {
@@ -24,10 +25,20 @@ export default createStore({
       state.checkingAuth = false
       state.authenticated = payload
     },
-    setUser(state:State, payload: User) {
+    setUser(state: State, payload: User) {
       state.authenticated = true // assumes setUser is only called by logging in
       state.checkingAuth = false
       state.user = payload
+    },
+    logout(state: State) {
+      state.authenticated = false
+      state.user = emptyUser
+    },
+  },
+  actions: {
+    async logout(context: ActionContext<State, any>) {
+      await auth.logout()
+      context.commit("logout")
     },
   },
 })
