@@ -2,12 +2,13 @@ package services
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
 	"valorize-app/models"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo/v4"
 )
 
 type TokenClaims struct {
@@ -61,5 +62,6 @@ func CreateTokenCookie(token string) *http.Cookie {
 	cookie.Value = token
 	cookie.Expires = time.Now().Add(144 * time.Hour)
 	cookie.HttpOnly = true
+	cookie.SameSite = 1
 	return cookie
 }
