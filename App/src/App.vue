@@ -25,7 +25,6 @@
 import { mapGetters } from "vuex"
 import { defineComponent } from "vue";
 import SvgLoader from "./components/SvgLoader.vue";
-import auth from "./services/authentication"
 
 export default defineComponent({
   name: "App",
@@ -42,5 +41,14 @@ export default defineComponent({
 });
 </script>
 
-<style lang="postcss">
+<style>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

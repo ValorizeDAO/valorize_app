@@ -53,7 +53,7 @@ func (auth *AuthHandler) Login(c echo.Context) error {
   cookie := services.CreateTokenCookie(token)
   c.SetCookie(cookie)
 
-  return c.JSON(http.StatusCreated, map[string]string{
+  return c.JSON(http.StatusOK, map[string]string{
     "id":        strconv.FormatUint(uint64(user.ID), 10),
     "name":      user.Name,
     "username":  user.Username,

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-purple-50 h-screen">
+  <div class="bg-purple-50">
     <div class="max-w-sm mx-auto pt-24 px-6 md:px-0">
       <h1 class="font-black text-3xl">Register</h1>
       <div class="my-8">
@@ -178,7 +178,7 @@ export default defineComponent({
         .then((result) => {
           if (!result.error) {
             store.state.commit("authenticated", true);
-            router.push("/");
+            router.push("/profile");
           }
         })
         .catch((error) => console.log("error", error));
@@ -199,16 +199,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
 .spinner {
   animation: rotate 2s linear infinite;
   z-index: 2;
