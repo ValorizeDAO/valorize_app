@@ -33,6 +33,9 @@ export default createStore({
       state.user = payload
       state.user.avatar = import.meta.env.VITE_BACKEND_URL + "/static/images/" + state.user.avatar
     },
+    setUserPicture(state: State, payload: string) {
+      state.user.avatar = import.meta.env.VITE_BACKEND_URL + "/static/images/" + payload
+    },
     logout(state: State) {
       state.authenticated = false
       state.user = emptyUser
@@ -40,7 +43,6 @@ export default createStore({
   },
   actions: {
     async logout(context: ActionContext<State, any>) {
-      await auth.logout()
       context.commit("logout")
     },
   },

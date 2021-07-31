@@ -38,7 +38,7 @@ export default {
       credentials: 'include',
     } as RequestInit;
 
-    const apiResponse = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/me/picture", requestOptions);
+    const apiResponse = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/me/picture", requestOptions) as Response;
     return apiResponse;
   }
 }

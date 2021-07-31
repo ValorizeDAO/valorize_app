@@ -25,12 +25,14 @@
 import { mapGetters } from "vuex"
 import { defineComponent } from "vue";
 import SvgLoader from "./components/SvgLoader.vue";
+import auth from "./services/authentication"
 
 export default defineComponent({
   name: "App",
   components: { SvgLoader },
   methods: {
     async logout() {
+      await auth.logout()
       this.$store.dispatch('logout')
       this.$router.push('login')
     }

@@ -171,17 +171,26 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
   dst, err := os.Create(path)
 
   if err != nil {
-    return err
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "server storage error",
+    })
   }
 
   defer dst.Close()
 
-  if _, err = io.Copy(dst, src); err != nil {
-    return err
+   _, err = io.Copy(dst, src)
+   if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "Could not copy image to server",
+    })
   }
 
   userData.Avatar = filename
-  auth.server.DB.Save(userData)
+  if auth.server.DB.Save(&userData).Error != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not save user data",
+    })
+  }
 
   return c.JSON(http.StatusOK, map[string]string{
     "image": filename,
