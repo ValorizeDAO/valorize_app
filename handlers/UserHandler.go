@@ -28,6 +28,8 @@ func (user *UserHandler) Show(c echo.Context) error {
     "username": userData.Username,
     "name":     userData.Name,
     "id":       strconv.Itoa(int(userData.ID)),
+    "avatar":   userData.Avatar,
+    "about":    userData.About,
   }
   return c.JSON(http.StatusOK, publicData)
 }

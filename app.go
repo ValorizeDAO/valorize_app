@@ -31,6 +31,8 @@ func main() {
 	}))
 
 	e.Static("/*", "app/dist")
+	e.Static("/static/images", "dist/images")
+
 	e.GET("/success", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Success")
 	})

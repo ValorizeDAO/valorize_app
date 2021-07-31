@@ -1,19 +1,18 @@
 package handlers
 
 import (
-	"errors"
-  "fmt"
+  "errors"
   "io"
   "net/http"
   "os"
   "strconv"
-	"valorize-app/models"
-	"valorize-app/services"
-	"valorize-app/services/ethereum"
+  "valorize-app/models"
+  "valorize-app/services"
+  "valorize-app/services/ethereum"
 
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo/v4"
-	"golang.org/x/crypto/bcrypt"
+  "github.com/jinzhu/gorm"
+  "github.com/labstack/echo/v4"
+  "golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
@@ -61,6 +60,8 @@ func (auth *AuthHandler) Login(c echo.Context) error {
     "name":      user.Name,
     "username":  user.Username,
     "email":     user.Email,
+    "avatar":    user.Avatar,
+    "about":     user.About,
   })
 }
 
@@ -118,6 +119,8 @@ func (auth *AuthHandler) Show(c echo.Context) error {
     "username": user.Username,
     "name":     user.Name,
     "id":       strconv.Itoa(int(user.ID)),
+    "avatar":   user.Avatar,
+    "about":    user.About,
   }
   return c.JSON(http.StatusOK, publicData)
 }
@@ -135,6 +138,8 @@ func (auth *AuthHandler) ShowUser(c echo.Context) error {
     "name":      user.Name,
     "username":  user.Username,
     "email":     user.Email,
+    "avatar":    user.Avatar,
+    "about":     user.About,
   })
 }
 func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
@@ -157,8 +162,8 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
   }
   defer src.Close()
 
-  fmt.Println(file.Header)
-  path := "dist/" + strconv.FormatUint(uint64(userData.ID), 10) + "_avatar.jpg"
+  filename := strconv.FormatUint(uint64(userData.ID), 10) + "_avatar.jpg"
+  path := "dist/images/" + filename
   dst, err := os.Create(path)
 
   if err != nil {
@@ -171,5 +176,10 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
     return err
   }
 
-  return c.String(http.StatusOK, "ok then")
+  userData.Avatar = filename
+  auth.server.DB.Save(userData)
+
+  return c.JSON(http.StatusOK, map[string]string{
+    "image": filename,
+  })
 }

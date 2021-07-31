@@ -8,6 +8,8 @@ type User struct {
 	Name     string `json:"name" gorm:"type:varchar(200);"`
 	Username string `json:"username" gorm:"type:varchar(200);"`
 	Password string `json:"password" gorm:"type:varchar(200);"`
+	Avatar   string `json:"password" gorm:"type:varchar(200);"`
+	About    string `json:"password" gorm:"type:varchar(1000);"`
 	Wallets  []Wallet
 }
 
