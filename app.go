@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/stripe/stripe-go/v72"
 	"net/http"
 	"valorize-app/config"
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/stripe/stripe-go/v72"
 )
 
 func main() {
@@ -44,11 +45,13 @@ func main() {
 	e.POST("/payments/successhook", payment.OnPaymentAccepted)
 
 	api := e.Group("/api/v0")
-	api.GET("/me", auth.ShowUser, appmiddleware.AuthMiddleware)
+
+	me := api.Group("/me", appmiddleware.AuthMiddleware)
+	me.GET("", auth.ShowUser)
+	me.PUT("/picture", auth.UpdatePicture)
 
 	userGroup := api.Group("/users")
 	userGroup.GET("/:username", user.Show)
-	userGroup.PUT("/:username/edit-picture", user.Update, appmiddleware.AuthMiddleware)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 		r.POST("/wallet", eth.CreateWalletFromRequest)

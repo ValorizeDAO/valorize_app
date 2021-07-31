@@ -8,7 +8,7 @@
       <div class="grid grid-cols-6 gap-8">
         <div class="col-span-6">
           <h1 class="text-3xl font-black">Your Profile</h1>
-          <h2 class="text-xl font-black">javier123454321</h2>
+          <h2 class="text-xl font-black">{{ user.username }}</h2>
         </div>
         <div class="col-span-2">
           <div class="relative mt-6 -ml-2">
@@ -20,10 +20,10 @@
             </div>
             <img class="h-52 w-52" src="../assets/img/dotted_shadow.png" alt="dotted shadow" />
           </div>
-          <transform name="Fade">
+          <transform name="fade">
             <button
-              v-if="pictureStatusInit"
-              @click="upload"
+              v-if="pictureStatus == 'INIT'"
+              @click="changeProfile"
               class="
                 px-4
                 py-2
@@ -38,8 +38,9 @@
             >
               Change Picture
             </button>
-            <div class="flex justify-around" v-else>
+            <div class="flex justify-around" v-else-if="pictureStatus == 'PREVIEW'">
               <button
+                @click="sendPhoto"
                 class="
                   px-4
                   py-2
@@ -55,6 +56,7 @@
                 Save
               </button>
               <button
+                @click="resetPhoto"
                 class="
                   px-4
                   py-2
@@ -115,30 +117,50 @@
 
 <script lang="ts">
 import { ref, defineComponent } from "vue";
+import auth from "../services/authentication"
+import { useStore } from 'vuex'
 export default defineComponent({
   name: "EditProfilePage",
   props: {},
   setup: () => {
+    const store = useStore()
     const pictureFormUpload = ref(null);
-    const pictureStatusInit = ref(true);
     const profileImage = ref("");
-    function upload() {
+    const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "FAIL"]
+    const pictureStatus = ref(pictureStatuses[0]);
+    function changeProfile() {
       (pictureFormUpload.value as HTMLInputElement).click();
     }
     function changePic(e) {
       var files = e.target.files || e.dataTransfer.files;
-      if (!files.length)
+      if (!files.length){
         return;
-      pictureStatusInit.value = false;
+      }
+      pictureStatus.value = pictureStatuses[1];
       console.log((pictureFormUpload.value as HTMLInputElement).value)
       var reader = new FileReader();
 
       reader.onload = (e) => {
         profileImage.value = e.target.result;
-      };
+      }
       reader.readAsDataURL((pictureFormUpload.value as HTMLInputElement).files[0]);
     }
-    return { pictureFormUpload, pictureStatusInit, profileImage, upload, changePic };
+    async function sendPhoto() {
+      pictureStatus.value = pictureStatuses[2];
+      const uploadRequest = await auth.uploadPicture((pictureFormUpload.value as HTMLInputElement).files[0])
+      if (uploadRequest.status == 200) {
+        pictureStatus.value = pictureStatuses[0];
+      } else {
+        pictureStatus.value = pictureStatuses[3];
+      }
+    }
+    function resetPhoto() {
+      pictureStatus.value = pictureStatuses[0];
+      profileImage.value = "";
+    }
+
+
+    return { pictureFormUpload, pictureStatus, profileImage, changeProfile, changePic, sendPhoto, resetPhoto, user: store.state.user };
   },
 });
 </script>

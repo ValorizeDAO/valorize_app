@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"errors"
-	"net/http"
-	"strconv"
+  "fmt"
+  "io"
+  "net/http"
+  "os"
+  "strconv"
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
@@ -133,4 +136,40 @@ func (auth *AuthHandler) ShowUser(c echo.Context) error {
     "username":  user.Username,
     "email":     user.Email,
   })
+}
+func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
+  userData, err := services.AuthUser(c, *auth.server.DB)
+  if err != nil {
+    return c.JSON(http.StatusNotFound, map[string]string{
+      "error": "could not find " + userData.Username,
+    })
+  }
+
+  file, err := c.FormFile("picture")
+  if err != nil {
+    return c.JSON(http.StatusNotFound, map[string]string{
+      "error": "could not process file",
+    })
+  }
+  src, err := file.Open()
+  if err != nil {
+    return err
+  }
+  defer src.Close()
+
+  fmt.Println(file.Header)
+  path := "dist/" + strconv.FormatUint(uint64(userData.ID), 10) + "_avatar.jpg"
+  dst, err := os.Create(path)
+
+  if err != nil {
+    return err
+  }
+
+  defer dst.Close()
+
+  if _, err = io.Copy(dst, src); err != nil {
+    return err
+  }
+
+  return c.String(http.StatusOK, "ok then")
 }
