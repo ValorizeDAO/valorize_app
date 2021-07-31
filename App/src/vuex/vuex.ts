@@ -21,6 +21,7 @@ export default createStore({
     authenticated: (state: State) => state.authenticated,
     user: (state: State) => state.user,
     checkingAuth: (state: State) => state.checkingAuth,
+    profileImage: (state: State) => state.user.avatar,
   },
   mutations: {
     authenticated(state: State, payload: boolean) {

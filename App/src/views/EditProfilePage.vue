@@ -158,7 +158,7 @@ export default defineComponent({
   setup: () => {
     const store = useStore();
     const pictureFormUpload = ref(null);
-    const profileImage = ref(store.state.user.avatar);
+    const profileImage = ref(store.getters('profileImage'));
     const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "ERROR"];
     const pictureStatus = ref(pictureStatuses[0]);
     function changeProfile() {
@@ -195,7 +195,7 @@ export default defineComponent({
     }
     function resetPhoto() {
       pictureStatus.value = pictureStatuses[0];
-      profileImage.value = store.state.user.avatar
+      profileImage.value = store.getters('profileImage')
       (pictureFormUpload.value as HTMLInputElement).outerHTML = (pictureFormUpload.value as HTMLInputElement).outerHTML;
     }
 
