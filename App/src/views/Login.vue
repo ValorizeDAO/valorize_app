@@ -118,7 +118,7 @@ export default defineComponent({
         .catch((error) => console.log("error", error));
     }
 
-    return { name, password, sendLogin, authError };
+    return { name, password, sendLogin, authError, authenticating };
   },
 });
 </script>

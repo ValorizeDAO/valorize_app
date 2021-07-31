@@ -1,16 +1,19 @@
 package handlers
 
 import (
-	"errors"
-	"net/http"
-	"strconv"
-	"valorize-app/models"
-	"valorize-app/services"
-	"valorize-app/services/ethereum"
+  "encoding/json"
+  "errors"
+  "io"
+  "net/http"
+  "os"
+  "strconv"
+  "valorize-app/models"
+  "valorize-app/services"
+  "valorize-app/services/ethereum"
 
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo/v4"
-	"golang.org/x/crypto/bcrypt"
+  "github.com/jinzhu/gorm"
+  "github.com/labstack/echo/v4"
+  "golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
@@ -53,12 +56,14 @@ func (auth *AuthHandler) Login(c echo.Context) error {
   cookie := services.CreateTokenCookie(token)
   c.SetCookie(cookie)
 
-  return c.JSON(http.StatusOK, map[string]string{
-    "id":        strconv.FormatUint(uint64(user.ID), 10),
-    "name":      user.Name,
-    "username":  user.Username,
-    "email":     user.Email,
-  })
+  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
+  }
+  return c.JSON(http.StatusOK, json.RawMessage(userStruct))
+
 }
 
 func (auth *AuthHandler) Logout(c echo.Context) error {
@@ -97,10 +102,14 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 
   go ethereum.StoreUserKeystore(password, user.ID, auth.server.DB)
 
-  return c.JSON(http.StatusCreated, map[string]string{
-    "email": email,
-    "user":  username,
-  })
+  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
+  }
+  return c.JSON(http.StatusCreated, json.RawMessage(userStruct))
+
 }
 
 func (auth *AuthHandler) Show(c echo.Context) error {
@@ -111,12 +120,14 @@ func (auth *AuthHandler) Show(c echo.Context) error {
       "error": "could not find " + user.Username,
     })
   }
-  publicData := map[string]string{
-    "username": user.Username,
-    "name":     user.Name,
-    "id":       strconv.Itoa(int(user.ID)),
+  userStruct, err := json.Marshal(models.GetUserProfile(*user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
   }
-  return c.JSON(http.StatusOK, publicData)
+  return c.JSON(http.StatusOK, json.RawMessage(userStruct))
+
 }
 func (auth *AuthHandler) ShowUser(c echo.Context) error {
   user, err := services.AuthUser(c, *auth.server.DB)
@@ -127,10 +138,61 @@ func (auth *AuthHandler) ShowUser(c echo.Context) error {
     })
   }
 
+  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
+  }
+  return c.JSON(http.StatusOK, json.RawMessage(userStruct))
+}
+func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
+  userData, err := services.AuthUser(c, *auth.server.DB)
+  if err != nil {
+    return c.JSON(http.StatusNotFound, map[string]string{
+      "error": "could not find " + userData.Username,
+    })
+  }
+
+  file, err := c.FormFile("picture")
+  if err != nil {
+    return c.JSON(http.StatusNotFound, map[string]string{
+      "error": "could not process file",
+    })
+  }
+  src, err := file.Open()
+  if err != nil {
+    return err
+  }
+  defer src.Close()
+
+  filename := strconv.FormatUint(uint64(userData.ID), 10) + "_avatar.jpg"
+  path := "dist/images/" + filename
+  dst, err := os.Create(path)
+
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "server storage error",
+    })
+  }
+
+  defer dst.Close()
+
+   _, err = io.Copy(dst, src)
+   if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "Could not copy image to server",
+    })
+  }
+
+  userData.Avatar = filename
+  if auth.server.DB.Save(&userData).Error != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not save user data",
+    })
+  }
+
   return c.JSON(http.StatusOK, map[string]string{
-    "id":        strconv.FormatUint(uint64(user.ID), 10),
-    "name":      user.Name,
-    "username":  user.Username,
-    "email":     user.Email,
+    "image": filename,
   })
 }

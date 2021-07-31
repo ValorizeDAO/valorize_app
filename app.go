@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/stripe/stripe-go/v72"
 	"net/http"
 	"valorize-app/config"
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/stripe/stripe-go/v72"
 )
 
 func main() {
@@ -19,6 +20,7 @@ func main() {
 	payment := handlers.NewPaymentHandler(s)
 	auth := handlers.NewAuthHandler(s)
 	eth := handlers.NewEthHandler(s)
+	user := handlers.NewUserHandler(s)
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -29,13 +31,14 @@ func main() {
 	}))
 
 	e.Static("/*", "app/dist")
+	e.Static("/static/images", "dist/images")
+
 	e.GET("/success", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Success")
 	})
 	e.GET("/cancel", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Payment error")
 	})
-	e.GET("/user/:username", auth.Show)
 	e.POST("/login", auth.Login)
 	e.GET("/logout", auth.Logout)
 	e.POST("/register", auth.Register)
@@ -44,7 +47,13 @@ func main() {
 	e.POST("/payments/successhook", payment.OnPaymentAccepted)
 
 	api := e.Group("/api/v0")
-		api.GET("/me", auth.ShowUser, appmiddleware.AuthMiddleware)
+
+	me := api.Group("/me", appmiddleware.AuthMiddleware)
+	me.GET("", auth.ShowUser)
+	me.PUT("/picture", auth.UpdatePicture)
+
+	userGroup := api.Group("/users")
+	userGroup.GET("/:username", user.Show)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 		r.POST("/wallet", eth.CreateWalletFromRequest)

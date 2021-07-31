@@ -12,6 +12,8 @@ export default createStore({
         email: "",
         name: "",
         username: "",
+        avatar: "",
+        about: "",
       },
     }
   },
@@ -29,6 +31,10 @@ export default createStore({
       state.authenticated = true // assumes setUser is only called by logging in
       state.checkingAuth = false
       state.user = payload
+      state.user.avatar = import.meta.env.VITE_BACKEND_URL + "/static/images/" + state.user.avatar
+    },
+    setUserPicture(state: State, payload: string) {
+      state.user.avatar = import.meta.env.VITE_BACKEND_URL + "/static/images/" + payload
     },
     logout(state: State) {
       state.authenticated = false
@@ -37,7 +43,6 @@ export default createStore({
   },
   actions: {
     async logout(context: ActionContext<State, any>) {
-      await auth.logout()
       context.commit("logout")
     },
   },

@@ -14,5 +14,6 @@ func getMigrationsList() []gmStore.Migratable {
 	return []gmStore.Migratable{
 		&list.CreateUserTable{},
 		&list.CreateWalletTable{},
+		&list.UpdateUserTable{},
 	}
 }
