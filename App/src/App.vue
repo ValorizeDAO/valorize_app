@@ -5,7 +5,7 @@
         <img src="./assets/logo_large.png" alt="Valorize" class="h-8" />
       </router-link>
       <div v-if="!authenticated" class="pr-6 flex">
-        <router-link class="pr-4" to="/Login">Login</router-link>
+        <router-link class="pr-4" to="/login">Login</router-link>
         <router-link to="/register">Register</router-link>
       </div>
       <div v-else class="pr-6 flex">

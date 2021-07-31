@@ -19,6 +19,7 @@ func main() {
 	payment := handlers.NewPaymentHandler(s)
 	auth := handlers.NewAuthHandler(s)
 	eth := handlers.NewEthHandler(s)
+	user := handlers.NewUserHandler(s)
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -35,7 +36,6 @@ func main() {
 	e.GET("/cancel", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Payment error")
 	})
-	e.GET("/user/:username", auth.Show)
 	e.POST("/login", auth.Login)
 	e.GET("/logout", auth.Logout)
 	e.POST("/register", auth.Register)
@@ -44,7 +44,11 @@ func main() {
 	e.POST("/payments/successhook", payment.OnPaymentAccepted)
 
 	api := e.Group("/api/v0")
-		api.GET("/me", auth.ShowUser, appmiddleware.AuthMiddleware)
+	api.GET("/me", auth.ShowUser, appmiddleware.AuthMiddleware)
+
+	userGroup := api.Group("/users")
+	userGroup.GET("/:username", user.Show)
+	userGroup.PUT("/:username/edit-picture", user.Update, appmiddleware.AuthMiddleware)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 		r.POST("/wallet", eth.CreateWalletFromRequest)
