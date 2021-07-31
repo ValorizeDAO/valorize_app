@@ -28,4 +28,17 @@ export default {
     }
     throw new Error("Logout failed")
   },
+  async uploadPicture(file: File): Promise<Response>{
+    var formdata = new FormData();
+    formdata.append("picture", file, "user_picture.png");
+    var requestOptions = {
+      method: 'PUT',
+      body: formdata,
+      redirect: 'follow',
+      credentials: 'include',
+    } as RequestInit;
+
+    const apiResponse = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/me/picture", requestOptions);
+    return apiResponse;
+  }
 }

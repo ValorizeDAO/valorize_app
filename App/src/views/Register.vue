@@ -39,7 +39,7 @@
               >
                 {{
                   userNameAvailable
-                    ? debouncedValue + " is available"
+                    ? debouncedValue + " is available!"
                     : " * " + debouncedValue + " is not available"
                 }}
               </div>
@@ -135,7 +135,7 @@ export default defineComponent({
     async function fetchUserName(usernameToTest: Ref<string>) {
       username.value = usernameToTest.value;
       console.log('test')
-      fetch(import.meta.env.VITE_BACKEND_URL + "/user/" + usernameToTest.value)
+      fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + usernameToTest.value)
         .then((response) => {
           console.log({ response });
           if (response.status !== 200) {

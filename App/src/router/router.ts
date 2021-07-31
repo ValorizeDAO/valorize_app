@@ -3,6 +3,7 @@ import auth from "../services/authentication"
 import Dashboard from "../views/Dashboard.vue"
 import Login from "../views/Login.vue"
 import Register from "../views/Register.vue"
+import EditProfilePage from "../views/EditProfilePage.vue"
 import store from "../vuex/vuex"
 
 const routes = [
@@ -20,6 +21,11 @@ const routes = [
     path: "/register",
     name: "Register",
     component: Register,
+  },
+  {
+    path: "/edit-profile",
+    name: "Edit Profile",
+    component: EditProfilePage,
   },
 ]
 const router = createRouter({

@@ -1,13 +1,17 @@
 export interface User {
-  id: string,
+  id: number,
   email: string,
   name: string,
-  username: string
+  username: string,
+  avatar: string,
+  about: string
 }
 
 export const emptyUser: User = {
-  id: "",
+  id: 0,
   email: "",
   name: "",
   username: "",
+  avatar: "",
+  about: "",
 }
