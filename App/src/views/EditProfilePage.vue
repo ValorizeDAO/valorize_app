@@ -13,10 +13,17 @@
         <div class="col-span-2">
           <div class="relative mt-6 -ml-2">
             <div class="h-52 w-52 object-cover absolute transform translate-x-2 -translate-y-2 overflow-hidden">
-            <img
-              :src="profileImage === ''? '/src/assets/img/default_avatar.png' : profileImage"
-              alt="default avatar"
-            />
+            <div v-if="pictureStatus === 'INIT'">
+              <img
+                :src="user.avatar"
+                alt="avatar"
+              />
+            </div>
+            <div v-else>
+              <img
+                :src="profileImage === '' ? '/src/assets/img/default_avatar.png' : profileImage"
+                >
+            </div>
             </div>
             <img class="h-52 w-52" src="../assets/img/dotted_shadow.png" alt="dotted shadow" />
           </div>
@@ -125,7 +132,7 @@ export default defineComponent({
   setup: () => {
     const store = useStore()
     const pictureFormUpload = ref(null);
-    const profileImage = ref("");
+    const profileImage = ref(store.state.user.avatar);
     const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "FAIL"]
     const pictureStatus = ref(pictureStatuses[0]);
     function changeProfile() {
@@ -133,11 +140,11 @@ export default defineComponent({
     }
     function changePic(e) {
       var files = e.target.files || e.dataTransfer.files;
+      pictureStatus.value = pictureStatuses[1];
+
       if (!files.length){
         return;
       }
-      pictureStatus.value = pictureStatuses[1];
-      console.log((pictureFormUpload.value as HTMLInputElement).value)
       var reader = new FileReader();
 
       reader.onload = (e) => {
@@ -150,15 +157,16 @@ export default defineComponent({
       const uploadRequest = await auth.uploadPicture((pictureFormUpload.value as HTMLInputElement).files[0])
       if (uploadRequest.status == 200) {
         pictureStatus.value = pictureStatuses[0];
+        store.state.user.avatar = uploadRequest.json().image;
       } else {
         pictureStatus.value = pictureStatuses[3];
       }
     }
     function resetPhoto() {
-      pictureStatus.value = pictureStatuses[0];
-      profileImage.value = "";
+      pictureStatus.value = pictureStatuses[0]
+      profileImage.value = store.state.user.avatar
+      (pictureFormUpload.value as HTMLInputElement).outerHTML = (pictureFormUpload.value as HTMLInputElement).outerHTML
     }
-
 
     return { pictureFormUpload, pictureStatus, profileImage, changeProfile, changePic, sendPhoto, resetPhoto, user: store.state.user };
   },
