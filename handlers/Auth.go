@@ -1,6 +1,7 @@
 package handlers
 
 import (
+  "encoding/json"
   "errors"
   "io"
   "net/http"
@@ -55,14 +56,14 @@ func (auth *AuthHandler) Login(c echo.Context) error {
   cookie := services.CreateTokenCookie(token)
   c.SetCookie(cookie)
 
-  return c.JSON(http.StatusOK, map[string]string{
-    "id":        strconv.FormatUint(uint64(user.ID), 10),
-    "name":      user.Name,
-    "username":  user.Username,
-    "email":     user.Email,
-    "avatar":    user.Avatar,
-    "about":     user.About,
-  })
+  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
+  }
+  return c.JSON(http.StatusOK, json.RawMessage(userStruct))
+
 }
 
 func (auth *AuthHandler) Logout(c echo.Context) error {
@@ -101,10 +102,14 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 
   go ethereum.StoreUserKeystore(password, user.ID, auth.server.DB)
 
-  return c.JSON(http.StatusCreated, map[string]string{
-    "email": email,
-    "user":  username,
-  })
+  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
+  }
+  return c.JSON(http.StatusCreated, json.RawMessage(userStruct))
+
 }
 
 func (auth *AuthHandler) Show(c echo.Context) error {
@@ -115,14 +120,14 @@ func (auth *AuthHandler) Show(c echo.Context) error {
       "error": "could not find " + user.Username,
     })
   }
-  publicData := map[string]string{
-    "username": user.Username,
-    "name":     user.Name,
-    "id":       strconv.Itoa(int(user.ID)),
-    "avatar":   user.Avatar,
-    "about":    user.About,
+  userStruct, err := json.Marshal(models.GetUserProfile(*user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
   }
-  return c.JSON(http.StatusOK, publicData)
+  return c.JSON(http.StatusOK, json.RawMessage(userStruct))
+
 }
 func (auth *AuthHandler) ShowUser(c echo.Context) error {
   user, err := services.AuthUser(c, *auth.server.DB)
@@ -133,14 +138,13 @@ func (auth *AuthHandler) ShowUser(c echo.Context) error {
     })
   }
 
-  return c.JSON(http.StatusOK, map[string]string{
-    "id":        strconv.FormatUint(uint64(user.ID), 10),
-    "name":      user.Name,
-    "username":  user.Username,
-    "email":     user.Email,
-    "avatar":    user.Avatar,
-    "about":     user.About,
-  })
+  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not find logged in user information",
+    })
+  }
+  return c.JSON(http.StatusOK, json.RawMessage(userStruct))
 }
 func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
   userData, err := services.AuthUser(c, *auth.server.DB)

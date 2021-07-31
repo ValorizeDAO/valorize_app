@@ -8,9 +8,47 @@ type User struct {
 	Name     string `json:"name" gorm:"type:varchar(200);"`
 	Username string `json:"username" gorm:"type:varchar(200);"`
 	Password string `json:"password" gorm:"type:varchar(200);"`
-	Avatar   string `json:"password" gorm:"type:varchar(200);"`
-	About    string `json:"password" gorm:"type:varchar(1000);"`
+	Avatar   string `json:"Avatar" gorm:"type:varchar(200);"`
+	About    string `json:"About" gorm:"type:varchar(1000);"`
 	Wallets  []Wallet
+}
+
+type UserProfile struct {
+	ID       uint   `json:"id"`
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+	About    string `json:"about"`
+}
+
+type UserPublicProfile struct {
+	ID       uint
+	Name     string
+	Username string
+	Avatar   string
+	About    string
+}
+
+func GetUserProfile(user User) UserProfile {
+	return UserProfile{
+		user.ID,
+		user.Email,
+		user.Name,
+		user.Username,
+		user.Avatar,
+		user.About,
+		}
+}
+
+func GetUserPublicProfile(user *User) *UserPublicProfile {
+	return &UserPublicProfile{
+		user.ID,
+		user.Name,
+		user.Username,
+		user.Avatar,
+		user.About,
+	}
 }
 
 func GetUserByID(id uint, db gorm.DB) (*User, error) {
