@@ -160,7 +160,7 @@
         <div class="my-4 mx-auto">
           <h1 class="text-lg">Deploy <span class="font-black">{{ tokenName }}</span></h1>
           <transition name="fade">
-            <button v-if="tokenDeployStatus === 'INIT'" @click="deployToTestNet" class="btn w-48 my-4 bg-paper-darker">
+            <button v-if="tokenDeployStatus === 'INIT' || tokenDeployStatus === 'ERROR'" @click="deployToTestNet" class="btn w-48 my-4 bg-paper-darker">
               Deploy Test Net
             </button>
             <SvgLoader v-else-if="tokenDeployStatus === 'DEPLOYING'" fill="purple"></SvgLoader>
