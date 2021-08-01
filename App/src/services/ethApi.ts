@@ -1,3 +1,5 @@
+import { Token } from "../models/Token"
+
 export default {
   async deployTokenFromBackend({ tokenName, tokenTiker }: { tokenName: string, tokenTiker: string }): Promise<any> {
     var formdata = new FormData();
@@ -21,8 +23,3 @@ export interface TokenResponse {
   status: string, 
   token: Token
 }
-export interface Token {
-    address: string, 
-    name: string, 
-    tiker: string
-  }
