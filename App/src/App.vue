@@ -1,6 +1,6 @@
 <template>
   <main class="min-h-screen">
-    <nav class="h-20 bg-white border-b-2 border-black absolute w-screen flex items-center pl-6 justify-between">
+    <nav class="h-20 bg-white border-b-2 border-black absolute w-screen flex items-center px-16 justify-between">
       <router-link to="/">
         <img src="./assets/logo_large.png" alt="Valorize" class="h-8" />
       </router-link>
@@ -8,7 +8,7 @@
         <router-link class="pr-4" to="/login">Login</router-link>
         <router-link to="/register">Register</router-link>
       </div>
-      <div v-else class="pr-6 flex">
+      <div v-else class="flex">
         <button @click="logout">Logout</button>
       </div>
     </nav>

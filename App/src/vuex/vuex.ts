@@ -1,6 +1,5 @@
 import { createStore, ActionContext } from "vuex"
 import { User, emptyUser } from "../models/user"
-import auth from "../services/authentication"
 
 export default createStore({
   state() {
@@ -8,7 +7,7 @@ export default createStore({
       checkingAuth: false,
       authenticated: false,
       user: {
-        id: "",
+        id: 0,
         email: "",
         name: "",
         username: "",
@@ -32,10 +31,10 @@ export default createStore({
       state.authenticated = true // assumes setUser is only called by logging in
       state.checkingAuth = false
       state.user = payload
-      state.user.avatar = import.meta.env.VITE_BACKEND_URL + "/static/images/" + state.user.avatar
+      state.user.avatar = setUserPicturePrefix(state.user.avatar)
     },
     setUserPicture(state: State, payload: string) {
-      state.user.avatar = import.meta.env.VITE_BACKEND_URL + "/static/images/" + payload
+      state.user.avatar = setUserPicturePrefix(payload)
     },
     logout(state: State) {
       state.authenticated = false
@@ -48,6 +47,10 @@ export default createStore({
     },
   },
 })
+
+function setUserPicturePrefix(filename: string) : string {
+  return import.meta.env.VITE_BACKEND_URL + "/static/images/" + (filename || "default_avatar.jpg")
+}
 
 interface State {
   checkingAuth: boolean,
