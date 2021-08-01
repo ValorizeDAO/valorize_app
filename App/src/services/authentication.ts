@@ -40,5 +40,22 @@ export default {
 
     const apiResponse = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/me/picture", requestOptions);
     return apiResponse;
+  },
+  async updateProfile({ name, about }: { name: string, about: string }): Promise<Response>{
+    var formdata = new FormData();
+    console.log({ name, about });
+    
+    formdata.append("name", name);
+    formdata.append("about", about);
+
+    var requestOptions = {
+      method: 'PUT',
+      body: formdata,
+      redirect: 'follow',
+      credentials: 'include',
+    } as RequestInit;
+
+    const apiResponse = await fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/me/profile", requestOptions) as Response;
+    return apiResponse;
   }
 }

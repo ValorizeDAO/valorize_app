@@ -94,12 +94,13 @@
           </ul>
         </div>
         <div class="col-span-4 pr-8">
-          <form @submit.prevent="(e) => console.log(e)">
+          <form @submit.prevent="updateProfile">
             <label>
               <p class="font-black mb-4">Your Name</p>
               <input
                 name="name"
                 type="text"
+                v-model="fullName"
                 placeholder="E.G. John Doe"
                 class="bg-purple-50 border-black border-b-2 w-full"
               />
@@ -107,14 +108,16 @@
             <label>
               <p class="font-black mt-8">Your Bio</p>
               <textarea
-                name="bio"
+                name="about"
                 type="textarea"
                 cols="50"
                 rows="10"
+                v-model="about"
                 placeholder="Something about yourself"
                 class="block bg-purple-50 border-black border-b-2 w-full h-60"
               />
             </label>
+            <button>submit</button>
           </form>
         </div>
       </div>
@@ -123,17 +126,39 @@
 </template>
 
 <script lang="ts">
-import { ref, defineComponent } from "vue";
-import auth from "../services/authentication"
-import { useStore } from 'vuex'
+import { ref, defineComponent, onMounted } from "vue";
+import auth from "../services/authentication";
+import { User } from '../models/user'
+import { useStore } from "vuex";
 export default defineComponent({
   name: "EditProfilePage",
   props: {},
   setup: () => {
-    const store = useStore()
+    const store = useStore();
+    const fullName = ref(store.state.user.name)
+    const about = ref(store.state.user.about)
+    const profileUpdateStatuses = ["INIT", "EDITED", "UPLOADING", "ERROR", "SUCCESS"];
+    const profileUpdateStatus = ref(profileUpdateStatuses[0])
+    async function updateProfile() {
+      profileUpdateStatus.value = profileUpdateStatus[2]
+      const response = await auth.updateProfile({ name: fullName.value, about: about.value })
+      if (response.status !== 200){
+        profileUpdateStatus.value = profileUpdateStatus[3]
+        return
+      }
+      profileUpdateStatus.value = profileUpdateStatus[4]
+      const userData = await response.json() as Promise<User>
+      store.commit("setUser", userData)
+    }
+    return { ...composeUpdateImage(), updateProfile, fullName, about, profileUpdateStatus }
+  },
+})
+
+function composeUpdateImage() {
+    const store = useStore();
     const pictureFormUpload = ref(null);
     const profileImage = ref(store.state.user.avatar);
-    const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "FAIL"]
+    const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "ERROR"];
     const pictureStatus = ref(pictureStatuses[0]);
     function changeProfile() {
       (pictureFormUpload.value as HTMLInputElement).click();
@@ -163,14 +188,21 @@ export default defineComponent({
       }
     }
     function resetPhoto() {
-      pictureStatus.value = pictureStatuses[0]
-      profileImage.value = store.state.user.avatar
-      (pictureFormUpload.value as HTMLInputElement).outerHTML = (pictureFormUpload.value as HTMLInputElement).outerHTML
+      pictureStatus.value = pictureStatuses[0];
+      profileImage.value = store.state.user.avatar;
+      (pictureFormUpload.value as HTMLInputElement).outerHTML = (pictureFormUpload.value as HTMLInputElement).outerHTML;
     }
-
-    return { pictureFormUpload, pictureStatus, profileImage, changeProfile, changePic, sendPhoto, resetPhoto, user: store.state.user };
-  },
-});
+    return {
+      pictureFormUpload,
+      pictureStatus,
+      profileImage,
+      changeProfile,
+      changePic,
+      sendPhoto,
+      resetPhoto,
+      user: store.state.user,
+    };
+}
 </script>
 
 <style scoped>

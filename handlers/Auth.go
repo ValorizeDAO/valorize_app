@@ -1,19 +1,19 @@
 package handlers
 
 import (
-  "encoding/json"
-  "errors"
-  "io"
-  "net/http"
-  "os"
-  "strconv"
-  "valorize-app/models"
-  "valorize-app/services"
-  "valorize-app/services/ethereum"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"os"
+	"strconv"
+	"valorize-app/models"
+	"valorize-app/services"
+	"valorize-app/services/ethereum"
 
-  "github.com/jinzhu/gorm"
-  "github.com/labstack/echo/v4"
-  "golang.org/x/crypto/bcrypt"
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
@@ -146,6 +146,7 @@ func (auth *AuthHandler) ShowUser(c echo.Context) error {
   }
   return c.JSON(http.StatusOK, json.RawMessage(userStruct))
 }
+
 func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
   userData, err := services.AuthUser(c, *auth.server.DB)
   if err != nil {
@@ -186,4 +187,34 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
   return c.JSON(http.StatusOK, map[string]string{
     "image": filename,
   })
+}
+
+func (auth *AuthHandler) UpdateProfile(c echo.Context) error {
+  userData, err := services.AuthUser(c, *auth.server.DB)
+  
+  if err != nil {
+    return c.JSON(http.StatusNotFound, map[string]string{
+      "error": "could not find logged in user",
+    })
+  }
+
+  name  := c.FormValue("name")
+  about := c.FormValue("about")
+
+  userData.Name = name
+  userData.About = about
+
+  err = auth.server.DB.Save(&userData).Error
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "database error",
+    })
+  }
+  userStruct, err := json.Marshal(models.GetUserProfile(userData))
+  if err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{
+      "error": "could not parse user data",
+    })
+  }
+  return c.JSON(http.StatusOK, json.RawMessage(userStruct))
 }

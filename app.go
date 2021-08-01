@@ -51,6 +51,7 @@ func main() {
 	me := api.Group("/me", appmiddleware.AuthMiddleware)
 	me.GET("", auth.ShowUser)
 	me.PUT("/picture", auth.UpdatePicture)
+	me.PUT("/profile", auth.UpdateProfile)
 
 	userGroup := api.Group("/users")
 	userGroup.GET("/:username", user.Show)
