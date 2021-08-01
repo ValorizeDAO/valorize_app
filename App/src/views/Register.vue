@@ -177,7 +177,7 @@ export default defineComponent({
         })
         .then((result) => {
           if (!result.error) {
-            store.state.commit("authenticated", true);
+            store.state.commit("authUser/authenticated", true);
             router.push("/profile");
           }
         })

@@ -45,7 +45,7 @@ router.beforeEach(async (to, from, next) => {
       store.state.checkingAuth = false
       next({ name: "Login" })
     } else {
-      store.commit("setUser", user)
+      store.commit("authUser/setUser", user)
       next()
     }
   }

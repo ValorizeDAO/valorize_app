@@ -110,7 +110,7 @@ export default defineComponent({
         .then((result) => {
           if (!authError.value) {
             store.state.authenticated = true;
-            store.commit("setUser", result);
+            store.commit("authUser/setUser", result);
             router.push("/");
           }
           authenticating.value = false;

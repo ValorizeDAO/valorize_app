@@ -16,3 +16,13 @@ export default {
     return apiResponse;
   }
 }
+
+export interface TokenResponse {
+  status: string, 
+  token: Token
+}
+export interface Token {
+    address: string, 
+    name: string, 
+    tiker: string
+  }

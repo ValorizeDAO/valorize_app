@@ -59,10 +59,7 @@
               >
                 Save
               </button>
-              <button
-                @click="resetPhoto"
-                class="btn w-48 my-4 bg-purple-100"
-              >
+              <button @click="resetPhoto" class="btn w-48 my-4 bg-purple-100">
                 Cancel
               </button>
             </div>
@@ -109,9 +106,7 @@
                 class="block bg-purple-50 border-black border-b-2 w-full h-60"
               />
             </label>
-            <button class="btn w-48 my-4 bg-purple-100">
-              Update Info
-            </button>
+            <button class="btn w-48 my-4 bg-purple-100">Update Info</button>
           </form>
         </div>
       </div>
@@ -129,45 +124,49 @@
     >
       <h3 class="text-3xl font-black">{{ user.username }}'s Token</h3>
       ( not yet deployed )
-        <label>
-          <p class="font-black mb-4">Token Name</p>
-          <input
-            type="text"
-            name="tokenName"
-            id="token-name"
-            v-model="tokenTiker"
-            placeholder="e.g. TOKEN"
-            class="bg-paper-light border-black border-b-2 w-full"
-          />
-        </label>
-        <label>
-          <p class="font-black my-4">Token Ticker</p>
-          <input
-            type="text"
-            name="tokenTiker"
-            id="token-tiker"
-            v-model="tokenTiker"
-            :placeholder="'e.g. ' + user.username + '\'s token'"
-            class="bg-paper-light border-black border-b-2 w-full"
-          />
-        </label>
-        <div class="text-center">
-          <p class="my-8">(Get 1000 of this token by deploying the contract)</p>
-          <button
-            @click="openModal"
-            class="btn w-48 my-4 bg-paper-darker"
-          >
-            Test Deploy
-          </button>
-        </div>
-      <div v-if="modalIsOpen" class="h-screen w-screen absolute top-0 left-0 bg-paper-lighter">
+      <label>
+        <p class="font-black mb-4">Token Name</p>
+        <input
+          type="text"
+          name="tokenName"
+          id="token-name"
+          v-model="tokenName"
+          class="bg-paper-light border-black border-b-2 w-full"
+        />
+      </label>
+      <label>
+        <p class="font-black my-4">Token Ticker</p>
+        <input
+          type="text"
+          name="tokenTiker"
+          id="token-tiker"
+          v-model="tokenTiker"
+          class="bg-paper-light border-black border-b-2 w-full"
+        />
+      </label>
+      <div class="text-center">
+        <p class="my-8">(Get 1000 of this token by deploying the contract)</p>
+        <button @click="openModal" class="btn w-48 my-4 bg-paper-darker">
+          Test Deploy
+        </button>
+      </div>
+      <div
+        v-if="modalIsOpen"
+        class="h-screen w-screen absolute top-0 left-0 bg-paper-lighter"
+      >
         <div class="flex w-full justify-between px-16 py-10">
-          el
           <button @click="openModal">X</button>
         </div>
-          <button @click="deployToTestNet" 
-            class="btn w-48 my-4 bg-paper-darker"
-          >deploy</button>
+        <div class="my-4 mx-auto">
+          <h1 class="text-lg">Deploy <span class="font-black">{{ tokenName }}</span></h1>
+          <transition name="fade">
+            <button v-if="tokenDeployStatus === 'INIT'" @click="deployToTestNet" class="btn w-48 my-4 bg-paper-darker">
+              Deploy Test Net
+            </button>
+            <SvgLoader v-else-if="tokenDeployStatus === 'DEPLOYING'" fill="purple"></SvgLoader>
+            <a v-else-if="tokenDeployStatus === 'SUCCESS'" :href="'https://ropsten.etherscan.io/address/' + tokenTestnetAddress" target="_blank">See on Testnet</a>
+          </transition>
+        </div>
       </div>
     </div>
   </div>
@@ -177,56 +176,57 @@
 import { ref, defineComponent } from "vue";
 import auth from "../services/authentication";
 import { User } from "../models/user";
-import ethApi from "../services/ethApi"
+import ethApi, { TokenResponse } from "../services/ethApi";
 import { useStore } from "vuex";
 export default defineComponent({
   name: "EditProfilePage",
   props: {},
   setup() {
     return {
-      ...composeprofileInfo(),
+      ...composeProfileInfo(),
       ...composeUpdateImage(),
       ...composeDeployToken(),
-    }
+    };
   },
 });
-function composeprofileInfo() {
-    const store = useStore();
-    const fullName = ref(store.state.user.name);
-    const about = ref(store.state.user.about);
-    const profileUpdateStatuses = [
-      "INIT",
-      "EDITED",
-      "UPLOADING",
-      "ERROR",
-      "SUCCESS",
-    ];
-    const profileUpdateStatus = ref(profileUpdateStatuses[0]);
-    async function updateProfile() {
-      profileUpdateStatus.value = profileUpdateStatus[2];
-      const response = await auth.updateProfile({
-        name: fullName.value,
-        about: about.value,
-      });
-      if (response.status !== 200) {
-        profileUpdateStatus.value = profileUpdateStatus[3];
-        return;
-      }
-      profileUpdateStatus.value = profileUpdateStatus[4];
-      const userData = (await response.json()) as Promise<User>;
-      store.commit("setUser", userData);
+function composeProfileInfo() {
+  const store = useStore();
+  const fullName = ref(store.state.authUser.user.name);
+  const about = ref(store.state.authUser.user.about);
+  
+  const profileUpdateStatuses = [
+    "INIT",
+    "EDITED",
+    "UPLOADING",
+    "ERROR",
+    "SUCCESS",
+  ];
+  const profileUpdateStatus = ref(profileUpdateStatuses[0]);
+  async function updateProfile() {
+    profileUpdateStatus.value = profileUpdateStatus[2];
+    const response = await auth.updateProfile({
+      name: fullName.value,
+      about: about.value,
+    });
+    if (response.status !== 200) {
+      profileUpdateStatus.value = profileUpdateStatus[3];
+      return;
     }
-    return {
-      updateProfile,
-      fullName,
-      about,
-      profileUpdateStatus,
-    };
+    profileUpdateStatus.value = profileUpdateStatus[4];
+    const userData = (await response.json()) as Promise<User>;
+    store.commit("authUser/setUser", userData);
+  }
+  return {
+    updateProfile,
+    fullName,
+    about,
+    profileUpdateStatus,
+  };
 }
 function composeUpdateImage() {
   const store = useStore();
   const pictureFormUpload = ref(null);
-  const profileImage = ref(store.state.user.avatar);
+  const profileImage = ref(store.state.authUser.user.avatar);
   const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "ERROR"];
   const pictureStatus = ref(pictureStatuses[0]);
   function changeProfile() {
@@ -259,7 +259,7 @@ function composeUpdateImage() {
         image: string;
       }>);
       store.commit(
-        "setUserPicture",
+        "authUser/setUserPicture",
         responseJson.image + "?" + new Date().getTime()
       );
     } else {
@@ -268,7 +268,7 @@ function composeUpdateImage() {
   }
   function resetPhoto() {
     pictureStatus.value = pictureStatuses[0];
-    profileImage.value = store.state.user.avatar;
+    profileImage.value = store.state.authUser.user.avatar;
     (pictureFormUpload.value as HTMLInputElement).outerHTML = (
       pictureFormUpload.value as HTMLInputElement
     ).outerHTML;
@@ -281,30 +281,49 @@ function composeUpdateImage() {
     changePic,
     sendPhoto,
     resetPhoto,
-    user: store.state.user,
+    user: store.state.authUser.user,
   };
 }
 function composeDeployToken() {
   const store = useStore();
-  const tokenName = ref(store.state.user.tokenName)
-  const tokenTiker = ref(store.state.user.tokenTiker)
-  const modalIsOpen = ref(false)
-  const tokenDeployStatuses = ["INIT", "DEPLOYING", "SUCCESS", "ERROR"]
-  const tokenDeployStatus = ref(tokenDeployStatuses[0])
-  function deployToTestNet() {
-    ethApi.deployTokenFromBackend(
-      { tokenName: tokenName.value, tokenTiker: tokenTiker.value },
-    )
+  const tokenName = ref(store.state.authUser.user.username + ' token');
+  const tokenTiker = ref("TKN");
+  const modalIsOpen = ref(false);
+  const tokenDeployStatuses = ["INIT", "DEPLOYING", "SUCCESS", "ERROR"];
+  const tokenDeployStatus = ref(tokenDeployStatuses[0]);
+  const tokenTestnetAddress = ref("")
+  async function deployToTestNet() {
+    tokenDeployStatus.value = tokenDeployStatuses[1];
+    const apiResponse = await ethApi.deployTokenFromBackend({
+      tokenName: tokenName.value,
+      tokenTiker: tokenTiker.value,
+    });
+    if (apiResponse.status == 200) {
+      tokenDeployStatus.value = tokenDeployStatuses[2];
+      const responseJson = await (apiResponse.json() as Promise<TokenResponse>);
+      store.commit("setToken", responseJson.token);
+      tokenTestnetAddress.value = responseJson.token.address;
+    } else {
+      tokenDeployStatus.value = tokenDeployStatuses[3];
+    }
   }
   function openModal() {
     modalIsOpen.value = !modalIsOpen.value;
   }
-  return { tokenName, tokenTiker, modalIsOpen, deployToTestNet, openModal }
+  return {
+    tokenName,
+    tokenTiker,
+    modalIsOpen,
+    deployToTestNet,
+    openModal,
+    tokenDeployStatus,
+    tokenTestnetAddress,
+  };
 }
 </script>
 
 <style scoped lang="postcss">
 .btn {
-  @apply px-4 py-2 cursor-pointer border-2 border-black rounded-md font-black
+  @apply px-4 py-2 cursor-pointer border-2 border-black rounded-md font-black;
 }
 </style>

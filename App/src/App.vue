@@ -33,12 +33,16 @@ export default defineComponent({
   methods: {
     async logout() {
       await auth.logout()
-      this.$store.dispatch('logout')
+      this.$store.commit('authUser/logout')
       this.$router.push('login')
     }
   },
   computed: {
-    ...mapGetters(['checkingAuth', 'authenticated', 'user'])
+    ...mapGetters({
+      checkingAuth: 'authUser/checkingAuth',
+      authenticated: 'authUser/authenticated',
+      user: 'authUser/user'
+    })
   },
 });
 </script>
