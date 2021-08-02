@@ -9,10 +9,7 @@ export default {
         tokenName: "",
         tokenSymbol: "",
       },
-      deployed: {
-        mainnet: false,
-        testnet: false,
-      },
+      deployedNetworkName: "",
       circulatingSupply: 0,
       ownerAddress: "",
     }
@@ -21,7 +18,7 @@ export default {
     tokenAddress: (state: TokenState) => state.token.address,
     token: (state: TokenState) => state.token,
     ownerAddress: (state: TokenState) => state.ownerAddress,
-    deployed: (state: TokenState) => state.deployed,
+    deployed: (state: TokenState) => state.deployedNetworkName,
   },
   mutations: {
     setToken(state: TokenState, payload: Token) {
@@ -32,10 +29,7 @@ export default {
 
 interface TokenState {
   token: Token,
-  deployed: {
-    mainnet: boolean,
-    testnet: boolean,
-  },
+  deployedNetworkName: string,
   circulatingSupply: number,
   ownerAddress: string
 }

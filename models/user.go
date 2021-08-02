@@ -6,11 +6,12 @@ type User struct {
 	gorm.Model
 	Email    string `json:"email" gorm:"type:varchar(200);"`
 	Name     string `json:"name" gorm:"type:varchar(200);"`
-	Username string `json:"username" gorm:"type:varchar(200);"`
+	Username string `json:"username" gorm:"type:varchar(200);unique;"`
 	Password string `json:"password" gorm:"type:varchar(200);"`
 	Avatar   string `json:"Avatar" gorm:"type:varchar(200);"`
 	About    string `json:"About" gorm:"type:varchar(1000);"`
 	Wallets  []Wallet
+	Tokens   []Token
 }
 
 type UserProfile struct {

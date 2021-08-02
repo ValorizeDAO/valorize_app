@@ -64,7 +64,6 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 	creatorToken := models.Wallet{
 		UserId:     user.ID,
 		Address:    addr.String(),
-		IsContract: true,
 	}
 
 	err = eth.server.DB.Create(&creatorToken).Error

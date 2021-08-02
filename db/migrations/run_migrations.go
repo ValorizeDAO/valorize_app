@@ -1,19 +1,64 @@
 package main
 
 import (
-	gm "github.com/ShkrutDenis/go-migrations"
-	gmStore "github.com/ShkrutDenis/go-migrations/store"
-	"valorize-app/db/migrations/list"
+  "github.com/jinzhu/gorm"
+  "gopkg.in/gormigrate.v1"
+  "time"
+  "valorize-app/config"
+  "valorize-app/db"
+  "valorize-app/models"
 )
 
 func main() {
-	gm.Run(getMigrationsList())
+  cfg := config.NewConfig()
+  m := GetMigrations(db.Init(cfg))
+  err := m.Migrate()
+  if err == nil {
+    print("Migrations did run successfully")
+  } else {
+    print("migrations failed.", err)
+  }
 }
-
-func getMigrationsList() []gmStore.Migratable {
-	return []gmStore.Migratable{
-		&list.CreateUserTable{},
-		&list.CreateWalletTable{},
-		&list.UpdateUserTable{},
-	}
+func GetMigrations(db *gorm.DB) *gormigrate.Gormigrate {
+  return gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+    {
+      ID: time.UnixDate,
+      Migrate: func(tx *gorm.DB) error {
+        if err := tx.AutoMigrate(&models.User{}).Error; err != nil {
+          return err
+        }
+        if err := tx.AutoMigrate(&models.Wallet{}).
+            AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE").
+            Error; err != nil {
+          return err
+        }
+        if err := tx.AutoMigrate(&models.Token{}).
+          AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE").
+          Error; err != nil {
+          return err
+        }
+        return nil
+      },
+      Rollback: func(tx *gorm.DB) error {
+        if err := tx.DropTable("users").Error; err != nil {
+          return nil
+        }
+        if err := tx.DropTable("wallets").Error; err != nil {
+          return nil
+        }
+        if err := tx.DropTable("tokens").Error; err != nil {
+          return nil
+        }
+        return nil
+      },
+    },
+  })
 }
+//func getMigrationsList() []gmStore.Migratable {
+//	return []gmStore.Migratable{
+//		&list.CreateUserTable{},
+//		&list.CreateWalletTable{},
+//		&list.UpdateUserTable{},
+//		&list.CreateTokenTable{},
+//	}
+//}

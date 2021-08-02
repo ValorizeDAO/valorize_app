@@ -60,7 +60,8 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 	}
 
 	if DB.Create(&wallet).Error != nil {
-		return "", errors.New("could not store keystore on db instance")
+		fmt.Println(DB.Create(&wallet).Error.Error())
+		return "", errors.New("could not store key")
 	}
 	os.Remove(account.URL.Path) // No need to keep the file once in the db.
 	return account.Address.Hex(), nil
@@ -72,9 +73,6 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	hotWalletBlob, err := ioutil.ReadFile("./wallets/hot/" + hotWalletAddress)
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
 
-	fmt.Println("")
-	fmt.Println(hotWallet.Address)
-	fmt.Println(hotWalletAddress)
 	_check(err)
 
 	gasPrice , err := GetGasPrice()
@@ -86,7 +84,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	fmt.Printf("Gas Price: %v", gasPrice)
 	address, tx, instance, err := contracts.DeployCreatorToken(auth, client, big.NewInt(1000), name, ticker)
 	if err != nil {
-		fmt.Printf("Error: %v", err.Error())
+		fmt.Printf("\nError: %v\n", err.Error())
 		return common.HexToAddress("0x0"), nil, nil, err
 	}
 	return address, tx, instance, nil
@@ -130,7 +128,6 @@ func GetGasPrice() (int64, error){
 }
 
 func hexaNumberToInteger(hexaString string) string {
-	// replace 0x or 0X with empty String
 	numberStr := strings.Replace(hexaString, "0x", "", -1)
 	numberStr = strings.Replace(numberStr, "0X", "", -1)
 	return numberStr
