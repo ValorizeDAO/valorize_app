@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"os"
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
@@ -59,11 +60,18 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 			"error": err.Error(),
 		})
 	}
-
 	user, _ := services.AuthUser(c, *eth.server.DB)
-	creatorToken := models.Wallet{
-		UserId:     user.ID,
-		Address:    addr.String(),
+	wallets := services.GetUserWallets(&user, *eth.server.DB)
+
+	creatorToken := models.Token{
+		UserId:     				user.ID,
+		ContractVersion:    "v0.0.1",
+		Name:               tokenName,
+		Symbol:             tokenTicker,
+		Network:            os.Getenv("ETH_TESTNET"),
+		OwnerAddress:       wallets[0].Address,
+		Address:            addr.String(),
+		User: 							user,
 	}
 
 	err = eth.server.DB.Create(&creatorToken).Error
@@ -74,14 +82,6 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]map[string]string{
-		"response": {
-			"status": "ok",
-		},
-		"token": {
-			"name":    tokenName,
-			"ticker":  tokenTicker,
-			"address": addr.String(),
-		},
-	})
+	tokenResponse := models.GetTokenResponse(&creatorToken)
+	return c.JSON(http.StatusOK, tokenResponse)
 }

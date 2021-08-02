@@ -21,7 +21,7 @@ func (user *UserHandler) Show(c echo.Context) error {
   userData, err := models.GetUserByUsername(username, *user.server.DB)
   if err != nil {
     return c.JSON(http.StatusNotFound, map[string]string{
-      "error": "could not find " + userData.Username,
+      "error": "could not find " + username,
     })
   }
   publicData := map[string]string{

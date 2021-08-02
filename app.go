@@ -21,6 +21,7 @@ func main() {
 	auth := handlers.NewAuthHandler(s)
 	eth := handlers.NewEthHandler(s)
 	user := handlers.NewUserHandler(s)
+	wallet := handlers.NewWalletHandler(s)
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -55,6 +56,7 @@ func main() {
 
 	userGroup := api.Group("/users")
 	userGroup.GET("/:username", user.Show)
+	userGroup.GET("/:username/wallets", wallet.Index)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 		r.POST("/wallet", eth.CreateWalletFromRequest)

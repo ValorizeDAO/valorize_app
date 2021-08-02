@@ -3,6 +3,7 @@ package main
 import (
   "github.com/jinzhu/gorm"
   "gopkg.in/gormigrate.v1"
+  "strconv"
   "time"
   "valorize-app/config"
   "valorize-app/db"
@@ -20,9 +21,10 @@ func main() {
   }
 }
 func GetMigrations(db *gorm.DB) *gormigrate.Gormigrate {
+  timeNow := strconv.FormatUint(uint64(time.Now().Unix()), 10)
   return gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
     {
-      ID: time.UnixDate,
+      ID: timeNow + "_migration",
       Migrate: func(tx *gorm.DB) error {
         if err := tx.AutoMigrate(&models.User{}).Error; err != nil {
           return err

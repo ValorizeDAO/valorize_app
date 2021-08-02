@@ -65,3 +65,9 @@ func CreateTokenCookie(token string) *http.Cookie {
 	cookie.SameSite = 1
 	return cookie
 }
+
+func GetUserWallets(user *models.User, db gorm.DB) []models.Wallet {
+	var userWallets []models.Wallet
+	db.Where( "user_id = ?", user.ID).Table("wallets").Find(&userWallets)
+	return userWallets
+}
