@@ -4,6 +4,7 @@ import Dashboard from "../views/Dashboard.vue"
 import Login from "../views/Login.vue"
 import Register from "../views/Register.vue"
 import EditProfilePage from "../views/EditProfilePage.vue"
+import ProfilePage from "../views/ProfilePage.vue"
 import store from "../vuex/store"
 
 const routes = [
@@ -27,6 +28,11 @@ const routes = [
     name: "Edit Profile",
     component: EditProfilePage,
   },
+  {
+    path: "/:username",
+    name: "Show Profile",
+    component: ProfilePage,
+  },
 ]
 const router = createRouter({
   history: createWebHistory(),
@@ -34,9 +40,10 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  const publicRoutes = ["Login", "Register"]
+  const publicRoutes = ["Login", "Register", "Show Profile"]
   let { name } = to
   name = name?.toString() || ""
+  console.log(name)
   const isAuthenticated = store.state.authenticated
   if (!publicRoutes.includes(name) && !isAuthenticated) {
     store.state.checkingAuth = true
