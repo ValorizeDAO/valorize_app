@@ -38,6 +38,7 @@
           left-0
           w-screen
           h-screen
+          z-50
         "
       >
         <SvgLoader fill="#fff" class="h-12 mx-auto"></SvgLoader>

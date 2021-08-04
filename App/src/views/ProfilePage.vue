@@ -12,11 +12,18 @@
         <h2 class="font-black text-2xl">
           {{tokenInfo.name}} ({{tokenInfo.symbol}})
         </h2>
-        Address: {{tokenInfo.address}}
+        <p class="my-4">
+          Address: {{tokenInfo.address}}
+        </p>
         <transition name="fade" mode="out-in">
           <img v-if="showImage" class="rounded border-2 border-black p-6 bg-purple-100" :src="'https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl='+tokenInfo.address+'&choe=UTF-8'" alt="">
-          <button v-else @click.prevent="showImage=true" class="btn bg-burple-100 my-12 w-48">Show QR Code</button>
+          <button v-else @click.prevent="showImage=true" class="btn bg-burple-100 mb-4 w-48">Show QR Code</button>
         </transition>
+        <div id="coin-data" class="flex justify-between">
+          <div>Price Per Coin: {{ tokenPrice }}</div>
+          <div>Total Supply: {{ tokenCap }}</div>
+          <div>USD locked in {{tokenInfo.symbol}}: {{ tokenEthBalance }}</div>
+        </div>
       </div>
     </div>
   </div>
@@ -32,38 +39,75 @@ export default defineComponent({
   name: 'ProfilePage',
   components: { ImageContainer },
   setup() {
-    const route = useRoute()
-    const store = useStore();
-    const username = ref ("")
-    const userStatuses = ["INIT", "LOADING", "SUCCESS", "FAIL"]
-    const userStatus = ref(userStatuses[0])
-    const userInfo = ref({})
-    const tokenInfo = ref([])
-    const showImage = ref(false)
-
-    onMounted( () => {
-      store.dispatch("authUser/checkAuth")
-      fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + route.params.username)
-          .then((response) => {
-            if (response.status !== 200) {
-              userStatus.value = userStatuses[3]
-              return
-            }
-            return response.json()
-          })
-          .then((result) => {
-            userInfo.value = result
-            userInfo.value.avatar = backendImageFilePathService(result.avatar)
-            tokenInfo.value = result.token
-          })
-          .catch((error) => console.log(error));
-    })
     return {
-      username,
-      userInfo,
-      tokenInfo,
-      showImage
+      ...composeUserInfo(),
+      ...composeTokenInfo()
     }
   }
 })
+function composeUserInfo() {
+  const route = useRoute()
+  const store = useStore();
+  const username = ref ("")
+  const userStatuses = ["INIT", "LOADING", "SUCCESS", "FAIL"]
+  const userStatus = ref(userStatuses[0])
+  const userInfo = ref({})
+  const tokenInfo = ref([])
+  const showImage = ref(false)
+
+  onMounted( () => {
+    store.dispatch("authUser/checkAuth")
+    fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + route.params.username)
+        .then((response) => {
+          if (response.status !== 200) {
+            userStatus.value = userStatuses[3]
+            return
+          }
+          return response.json()
+        })
+        .then((result) => {
+          userInfo.value = result
+          userInfo.value.avatar = backendImageFilePathService(result.avatar)
+          tokenInfo.value = result.token
+        })
+        .catch((error) => console.log(error));
+  })
+  return {
+    username,
+    userInfo,
+    tokenInfo,
+    showImage
+  }
+}
+function composeTokenInfo() {
+  const route = useRoute()
+  const store = useStore();
+  const userStatuses = ["INIT", "LOADING", "SUCCESS", "FAIL"]
+  const userStatus = ref(userStatuses[0])
+  const tokenPrice = ref(0)
+  const tokenCap = ref(0)
+  const tokenEthBalance = ref(0)
+  onMounted( () => {
+    store.dispatch("authUser/checkAuth")
+    fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + route.params.username + "/token")
+      .then((response) => {
+        if (response.status !== 200) {
+          userStatus.value = userStatuses[3]
+          return
+        }
+        return response.json()
+      })
+      .then((result) => {
+        tokenPrice.value = parseInt(result["ether_staked"])
+        tokenCap.value = parseInt(result["total_minted"])
+      })
+      .catch((error) => console.log(error));
+  })
+
+  return {
+    tokenPrice,
+    tokenCap,
+    tokenEthBalance
+  }
+}
 </script>
