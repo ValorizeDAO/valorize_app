@@ -56,7 +56,7 @@ func (auth *AuthHandler) Login(c echo.Context) error {
   cookie := services.CreateTokenCookie(token)
   c.SetCookie(cookie)
 
-  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  userStruct, err := json.Marshal(models.GetUserProfile(&user))
   if err != nil {
     return c.JSON(http.StatusInternalServerError, map[string]string{
       "error": "could not find logged in user information",
@@ -102,7 +102,7 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 
   go ethereum.StoreUserKeystore(password, user.ID, auth.server.DB)
 
-  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  userStruct, err := json.Marshal(models.GetUserProfile(&user))
   if err != nil {
     return c.JSON(http.StatusInternalServerError, map[string]string{
       "error": "could not find logged in user information",
@@ -120,7 +120,7 @@ func (auth *AuthHandler) Show(c echo.Context) error {
       "error": "could not find " + user.Username,
     })
   }
-  userStruct, err := json.Marshal(models.GetUserProfile(*user))
+  userStruct, err := json.Marshal(models.GetUserProfile(&user))
   if err != nil {
     return c.JSON(http.StatusInternalServerError, map[string]string{
       "error": "could not find logged in user information",
@@ -138,7 +138,7 @@ func (auth *AuthHandler) ShowUser(c echo.Context) error {
     })
   }
 
-  userStruct, err := json.Marshal(models.GetUserProfile(user))
+  userStruct, err := json.Marshal(models.GetUserProfile(&user))
   if err != nil {
     return c.JSON(http.StatusInternalServerError, map[string]string{
       "error": "could not find logged in user information",
@@ -219,7 +219,7 @@ func (auth *AuthHandler) UpdateProfile(c echo.Context) error {
       "error": "database error",
     })
   }
-  userStruct, err := json.Marshal(models.GetUserProfile(userData))
+  userStruct, err := json.Marshal(models.GetUserProfile(&userData))
   if err != nil {
     return c.JSON(http.StatusInternalServerError, map[string]string{
       "error": "could not parse user data",

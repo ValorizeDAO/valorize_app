@@ -3,15 +3,22 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/checkout/session"
 	"github.com/stripe/stripe-go/v72/webhook"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"valorize-app/contracts"
+	"valorize-app/models"
 	"valorize-app/services"
+	"valorize-app/services/ethereum"
 )
 
 type PaymentHandler struct {
@@ -24,8 +31,11 @@ func NewPaymentHandler(s *Server) *PaymentHandler {
 
 func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 	user, _ := services.AuthUser(c, *payment.Server.DB)
+	tokenName := c.FormValue("tokenName")
+	tokenSymbol := c.FormValue("tokenSymbol")
 
 	params := &stripe.CheckoutSessionParams{
+		CustomerEmail: &user.Email,
 		PaymentMethodTypes: stripe.StringSlice([]string{
 			"card",
 		}),
@@ -44,9 +54,11 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 		},
 		ClientReferenceID: stripe.String(strconv.FormatUint(uint64(user.ID), 10)),
 		//TODO: use environment variable
-		SuccessURL: stripe.String("http://localhost:1323/success"),
-		CancelURL:  stripe.String("http://localhost:1323/cancel"),
+		SuccessURL: stripe.String(os.Getenv("FRONTEND_URL") + "/" + user.Username),
+		CancelURL:  stripe.String(os.Getenv("FRONTEND_URL") + "/edit-profile"),
 	}
+	params.AddMetadata("token", tokenName)
+	params.AddMetadata("symbol", tokenSymbol)
 
 	s, err := session.New(params)
 
@@ -56,21 +68,28 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 
 	return c.Redirect(http.StatusSeeOther, s.URL)
 }
-func (payment *PaymentHandler) _fulfillOrder(session stripe.CheckoutSession) {
-	//e, err := json.Marshal(session)
-	//if err != nil {
-	//  fmt.Println(err)
-	//  return
-	//}
-	//TODO: implement interface
-	//customerId32bit, _ := strconv.ParseUint(session.ClientReferenceID, 10, 32)
-	//user, err := models.GetUserByID(uint(customerId32bit), *payment.Server.DB)
-	//if err != nil {
-	//  payment.Server.Echo.Logger.Error(map[string]string{
-	//    "message": "error accepting payment for " + string(session.ClientReferenceID),
-	//  })
-	//}
-	//ethereum.DeployCoin(user)
+func (payment *PaymentHandler) _fulfillOrder(session stripe.CheckoutSession) (common.Address, *types.Transaction, *contracts.CreatorToken, error){
+	var clientUrl string
+	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
+		clientUrl = os.Getenv("MAINNET_NODE")
+	} else {
+		clientUrl = os.Getenv("ETH_NODE")
+	}
+	client, err := ethclient.Dial(clientUrl)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Println("=======================\n\nConnected to ethereum mainnet\n\n=======================")
+	}
+
+	addr, tx, instance, err := ethereum.LaunchContract(client, session.Metadata["name"], session.Metadata["symbol"])
+
+	if err != nil {
+		 fmt.Println("error: " + err.Error())
+	}
+
+	return addr, tx, instance, err
 }
 
 func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
@@ -85,7 +104,6 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 	}
 
 	// Pass the request body and Stripe-Signature header to ConstructEvent, along with the webhook signing key
-	// You can find your endpoint's secret in your webhook settings
 	endpointSecret := "whsec_rJO3g8YgfWas3uDM4axkZ1Dj1bC2xwnU"
 	event, err := webhook.ConstructEvent(body, c.Request().Header.Get("Stripe-Signature"), endpointSecret)
 
@@ -104,10 +122,38 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 				"error": fmt.Sprintf("Error parsing webhook JSON: %v\n", err),
 			})
 		}
-		payment._fulfillOrder(session)
-	}
+		addr, tx, _, err := payment._fulfillOrder(session)
+		customerId32bit, _ := strconv.ParseUint(session.ClientReferenceID, 10, 32)
+		user, err := models.GetUserByID(uint(customerId32bit), *payment.Server.DB)
+		if err != nil {
+			payment.Server.Echo.Logger.Error(map[string]string{
+				"message": "error accepting payment for " + string(session.ClientReferenceID),
+			})
+		}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"data": "payment accepted",
-	})
+		creatorToken := models.Token{
+			UserId:          user.ID,
+			ContractVersion: "v0.0.1",
+			Name:            session.Metadata["name"],
+			Symbol:          session.Metadata["symbol"],
+			Network:         "MAINNET",
+			OwnerAddress:    os.Getenv("HOTWALLET"),
+			Address:         addr.String(),
+			User:            user,
+			TxHash:          tx.Hash().String(),
+		}
+
+		err = payment.Server.DB.Create(&creatorToken).Error
+
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "could not store contract information: " + err.Error(),
+			})
+		}
+
+		return c.JSON(http.StatusOK, map[string]string{
+			"data": "payment accepted",
+		})
+	}
+	return nil
 }

@@ -13,7 +13,6 @@
               class="
                 h-52
                 w-52
-                object-cover
                 absolute
                 transform
                 translate-x-2
@@ -21,11 +20,15 @@
                 overflow-hidden
               "
             >
-              <div v-if="pictureStatus === 'INIT'">
-                <img :src="user.avatar" alt="avatar" />
+              <div 
+                v-if="pictureStatus === 'INIT'">
+                <img class="h-52 w-52  object-cover" :src="user.avatar" alt="avatar" />
               </div>
-              <div v-else>
+              <div 
+                v-else 
+                >
                 <img
+                  class="h-52 w-52 object-cover"
                   :src="
                     profileImage === ''
                       ? '/src/assets/img/default_avatar.png'
@@ -160,11 +163,15 @@
         <div class="my-4 mx-auto">
           <h1 class="text-lg">Deploy <span class="font-black">{{ tokenName }}</span></h1>
           <transition name="fade">
-            <button v-if="tokenDeployStatus === 'INIT' || tokenDeployStatus === 'ERROR'" @click="deployToTestNet" class="btn w-48 my-4 bg-paper-darker">
-              Deploy Test Net
-            </button>
+            <div v-if="tokenDeployStatus === 'INIT' || tokenDeployStatus === 'ERROR'">
+              <button @click="deployToTestNet" class="btn w-48 my-4 bg-paper-darker">
+                Deploy to Test Net
+              </button>
+            </div>
             <SvgLoader v-else-if="tokenDeployStatus === 'DEPLOYING'" fill="purple"></SvgLoader>
-            <a v-else-if="tokenDeployStatus === 'SUCCESS'" :href="'https://ropsten.etherscan.io/address/' + tokenTestnetAddress" target="_blank">See on Testnet</a>
+            <div v-else-if="tokenDeployStatus === 'SUCCESS'">
+              <a  :href="'https://ropsten.etherscan.io/address/' + tokenTestnetAddress" target="_blank">See on Testnet</a>(Takes a few minutes to load)
+            </div>
           </transition>
         </div>
       </div>
@@ -178,9 +185,11 @@ import auth from "../services/authentication";
 import { User } from "../models/user";
 import ethApi, { TokenResponse } from "../services/ethApi";
 import { useStore } from "vuex";
+import SvgLoader from "../components/SvgLoader.vue"
 export default defineComponent({
   name: "EditProfilePage",
   props: {},
+  components: { SvgLoader },
   setup() {
     return {
       ...composeProfileInfo(),

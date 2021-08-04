@@ -6,11 +6,12 @@ type User struct {
 	gorm.Model
 	Email    string `json:"email" gorm:"type:varchar(200);"`
 	Name     string `json:"name" gorm:"type:varchar(200);"`
-	Username string `json:"username" gorm:"type:varchar(200);"`
+	Username string `json:"username" gorm:"type:varchar(200);unique;"`
 	Password string `json:"password" gorm:"type:varchar(200);"`
-	Avatar   string `json:"Avatar" gorm:"type:varchar(200);"`
-	About    string `json:"About" gorm:"type:varchar(1000);"`
+	Avatar   string `json:"avatar" gorm:"type:varchar(200);"`
+	About    string `json:"about" gorm:"type:varchar(1000);"`
 	Wallets  []Wallet
+	Tokens   []Token
 }
 
 type UserProfile struct {
@@ -30,7 +31,7 @@ type UserPublicProfile struct {
 	About    string
 }
 
-func GetUserProfile(user User) UserProfile {
+func GetUserProfile(user *User) UserProfile {
 	return UserProfile{
 		user.ID,
 		user.Email,
@@ -41,8 +42,8 @@ func GetUserProfile(user User) UserProfile {
 		}
 }
 
-func GetUserPublicProfile(user *User) *UserPublicProfile {
-	return &UserPublicProfile{
+func GetUserPublicProfile(user *User) UserPublicProfile {
+	return UserPublicProfile{
 		user.ID,
 		user.Name,
 		user.Username,
@@ -51,35 +52,35 @@ func GetUserPublicProfile(user *User) *UserPublicProfile {
 	}
 }
 
-func GetUserByID(id uint, db gorm.DB) (*User, error) {
+func GetUserByID(id uint, db gorm.DB) (User, error) {
 	var m User
 	if err := db.First(&m, id).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
+			return User{}, nil
 		}
-		return nil, err
+		return User{}, err
 	}
-	return &m, nil
+	return m, nil
 }
 
-func GetUserByEmail(e string, db gorm.DB) (*User, error) {
+func GetUserByEmail(e string, db gorm.DB) (User, error) {
 	var m User
 	if err := db.Where(&User{Email: e}).First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
+			return User{}, nil
 		}
-		return nil, err
+		return User{}, err
 	}
-	return &m, nil
+	return m, nil
 }
 
-func GetUserByUsername(username string, db gorm.DB) (*User, error) {
+func GetUserByUsername(username string, db gorm.DB) (User, error) {
 	var m User
 	if err := db.Where(&User{Username: username}).First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
-			return nil, nil
+			return User{}, err
 		}
-		return nil, err
+		return User{}, err
 	}
-	return &m, nil
+	return m, nil
 }

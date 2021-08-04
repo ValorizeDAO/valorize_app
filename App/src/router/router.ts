@@ -4,7 +4,7 @@ import Dashboard from "../views/Dashboard.vue"
 import Login from "../views/Login.vue"
 import Register from "../views/Register.vue"
 import EditProfilePage from "../views/EditProfilePage.vue"
-import store from "../vuex/vuex"
+import store from "../vuex/store"
 
 const routes = [
   {
