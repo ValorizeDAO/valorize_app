@@ -19,6 +19,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	user := handlers.NewUserHandler(s)
 	wallet := handlers.NewWalletHandler(s)
 	token := handlers.NewTokenHandler(s)
+	utils := handlers.NewUtilsHandler(s)
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -51,13 +52,18 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	me.PUT("/picture", auth.UpdatePicture)
 	me.PUT("/profile", auth.UpdateProfile)
 
+	r := api.Group("/admin", appmiddleware.AuthMiddleware)
+	r.POST("/wallet", eth.CreateWalletFromRequest)
+	r.POST("/deploy", eth.DeployCreatorToken)
+
+
 	userGroup := api.Group("/users")
 	userGroup.GET("/:username", user.Show)
 	userGroup.GET("/:username/token", token.Show)
 	userGroup.GET("/:username/wallets", wallet.Index)
 
-	r := api.Group("/admin", appmiddleware.AuthMiddleware)
-	r.POST("/wallet", eth.CreateWalletFromRequest)
-	r.POST("/deploy", eth.DeployCreatorToken)
+	u := api.Group("/utils")
+	u.GET("/price", utils.ShowEthPrice)
+
 	return e
 }
