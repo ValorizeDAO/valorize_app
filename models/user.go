@@ -10,8 +10,8 @@ type User struct {
 	Password string `json:"password" gorm:"type:varchar(200);"`
 	Avatar   string `json:"avatar" gorm:"type:varchar(200);"`
 	About    string `json:"about" gorm:"type:varchar(1000);"`
-	Wallets  []Wallet
-	Tokens   []Token
+	Wallets  []Wallet `json:"wallets" gorm:"ForeignKey:userId;AssociationForeignKey:user_id"`
+	Tokens   []Token	`json:"tokens" gorm:"ForeignKey:UserId;AssociationForeignKey:ID"`
 }
 
 type UserProfile struct {
@@ -24,11 +24,12 @@ type UserProfile struct {
 }
 
 type UserPublicProfile struct {
-	ID       uint
-	Name     string
-	Username string
-	Avatar   string
-	About    string
+	ID       uint    `json:"id"`
+	Name     string	 `json:"name"`
+	Username string	 `json:"username"`
+	Avatar   string	 `json:"avatar"`
+	About    string	 `json:"about"`
+	Tokens   []Token `json:"tokens"`
 }
 
 func GetUserProfile(user *User) UserProfile {
@@ -49,6 +50,7 @@ func GetUserPublicProfile(user *User) UserPublicProfile {
 		user.Username,
 		user.Avatar,
 		user.About,
+		user.Tokens,
 	}
 }
 
@@ -76,7 +78,7 @@ func GetUserByEmail(e string, db gorm.DB) (User, error) {
 
 func GetUserByUsername(username string, db gorm.DB) (User, error) {
 	var m User
-	if err := db.Where(&User{Username: username}).First(&m).Error; err != nil {
+	if err := db.Preload("Tokens").First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return User{}, err
 		}

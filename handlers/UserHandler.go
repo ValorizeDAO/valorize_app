@@ -3,7 +3,6 @@ package handlers
 import (
   "github.com/labstack/echo/v4"
   "net/http"
-  "strconv"
   "valorize-app/models"
 )
 
@@ -24,13 +23,7 @@ func (user *UserHandler) Show(c echo.Context) error {
       "error": "could not find " + username,
     })
   }
-  publicData := map[string]string{
-    "username": userData.Username,
-    "name":     userData.Name,
-    "id":       strconv.Itoa(int(userData.ID)),
-    "avatar":   userData.Avatar,
-    "about":    userData.About,
-  }
+  publicData := models.GetUserPublicProfile(&userData)
   return c.JSON(http.StatusOK, publicData)
 }
 
