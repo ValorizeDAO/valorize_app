@@ -149,7 +149,7 @@
           absolute
           top-0
           left-0
-          bg-black bg-opacity-50
+          bg-black bg-opacity-70
           flex
           justify-center
           items-center
@@ -158,7 +158,7 @@
         <div
           id="modal-body"
           @click.stop
-          class="bg-paper-light min-w-md h-80 mx-auto px-10"
+          class="bg-paper-light w-9/12 h-80 mx-auto px-10"
         >
           <div class="flex w-full justify-end">
             <button
@@ -180,23 +180,27 @@
             </button>
           </div>
           <div class="my-4 mx-auto">
-            <transition name="fade">
+            <transition name="fade" mode="out-in">
               <div
+                class="text-center"
                 v-if="
                   tokenDeployStatus === 'INIT' || tokenDeployStatus === 'ERROR'
                 "
               >
-                <h1 class="text-lg">
-                  Deploy <span class="font-black">{{ tokenName }}</span>
+                <h1 class="text-2xl">
+                  Deploy <span class="font-black mb-12">{{ tokenName }}</span>
                 </h1>
+                <p class="my-4 max-w-sm mx-auto">Coin will be on the Ropsten Ethereum test network, you will have a chance to confirm details
+                  there</p>
                 <button
                   @click="deployToTestNet"
-                  class="btn w-48 my-4 bg-purple-50 my-4"
+                  class="btn w-48 mt-4 bg-purple-50"
                 >
                   Test Deploy {{ tokenSymbol }}
                 </button>
               </div>
               <SvgLoader
+                class="text-center"
                 v-else-if="tokenDeployStatus === 'DEPLOYING'"
                 fill="#"
               ></SvgLoader>
@@ -204,22 +208,24 @@
                 v-else-if="tokenDeployStatus === 'SUCCESS'"
                 class="text-center my-6"
               >
-                <h2 class="text-2xl">
-                  Congratulations, {{ tokenName }} is on the test net!
-                </h2>
-                <a
-                  class="font-black underline text-center"
-                  :href="
-                    'https://ropsten.etherscan.io/address/' +
-                    tokenTestnetAddress
+                <h1 class="text-2xl font-black">
+                  Woo! You can now review the test version of {{ tokenName }}!
+                </h1>
+                <p class="my-6">
+                  <a
+                      class="font-black underline text-center"
+                      :href="
+                    'https://ropsten.etherscan.io/tx/' +
+                    tokenTestnetTx
                   "
-                  target="_blank"
-                  >See on EtherScan</a
-                >
-                <p class="mb-12">(Takes a few minutes to load)</p>
-                <a :href="checkoutLink" class="btn bg-purple-100 mt-12"
-                  >Deploy on Ethereum for $10</a
-                >
+                      target="_blank"
+                  >
+                    Confirm details
+                  </a>
+                </p>
+                <a :href="checkoutLink">
+                  <div class="btn w-1/2 mx-auto bg-purple-100 mt-12">Deploy on Ethereum for $10</div>
+                </a>
               </div>
             </transition>
           </div>
@@ -230,7 +236,7 @@
 </template>
 
 <script lang="ts">
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, computed } from "vue";
 import auth from "../services/authentication";
 import { User } from "../models/user";
 import ethApi, { TokenResponse } from "../services/ethApi";
@@ -350,28 +356,28 @@ function composeDeployToken() {
   const tokenSymbol = ref("TKN");
   const modalIsOpen = ref(false);
   const tokenDeployStatuses = ["INIT", "DEPLOYING", "SUCCESS", "ERROR"];
-  const tokenDeployStatus = ref(tokenDeployStatuses[2]);
-  const tokenTestnetAddress = ref("");
-  const checkoutLink = ref(
-    import.meta.env.VITE_BACKEND_URL + "/create-checkout-session"
-  );
+  const tokenDeployStatus = ref(tokenDeployStatuses[0]);
+  const tokenTestnetTx = ref("");
+  const checkoutLink = computed(() => {
+    const encodedName = encodeURIComponent(tokenName.value)
+    const encodedSymbol = encodeURIComponent(tokenSymbol.value)
+    return `${import.meta.env.VITE_BACKEND_URL}/create-checkout-session?tokenName=${encodedName}&tokenSymbol=${encodedSymbol}`
+  });
   async function deployToTestNet() {
     tokenDeployStatus.value = tokenDeployStatuses[1];
-    const apiResponse = await ethApi.deployTokenFromBackend({
+    const apiResponse = await ethApi.deployTokenToTestNet({
       tokenName: tokenName.value,
       tokenSymbol: tokenSymbol.value,
     });
     if (apiResponse.status == 200) {
       tokenDeployStatus.value = tokenDeployStatuses[2];
       const responseJson = await (apiResponse.json() as Promise<TokenResponse>);
-      store.commit("setToken", responseJson.token);
-      tokenTestnetAddress.value = responseJson.token.address;
+      tokenTestnetTx.value = responseJson.tx;
     } else {
       tokenDeployStatus.value = tokenDeployStatuses[3];
     }
   }
   function openModal(e: Event) {
-    console.log(e);
     modalIsOpen.value = !modalIsOpen.value;
   }
   return {
@@ -381,7 +387,7 @@ function composeDeployToken() {
     deployToTestNet,
     openModal,
     tokenDeployStatus,
-    tokenTestnetAddress,
+    tokenTestnetTx,
     checkoutLink,
   };
 }

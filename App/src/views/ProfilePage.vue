@@ -8,12 +8,22 @@
       <p class="mt-8">{{ userInfo.about }}</p>
     </div>
     <div id="token-info" class="col-span-7 pl-16 min-h-screen pt-8 border-r-2 border-black">
+      <div v-if="tokenInfo">
+        <h2 class="font-black text-2xl">
+          {{tokenInfo.name}} ({{tokenInfo.symbol}})
+        </h2>
+        Address: {{tokenInfo.address}}
+        <transition name="fade" mode="out-in">
+          <img v-if="showImage" class="rounded border-2 border-black p-6 bg-purple-100" :src="'https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl='+tokenInfo.address+'&choe=UTF-8'" alt="">
+          <button v-else @click.prevent="showImage=true" class="btn bg-burple-100 my-12 w-48">Show QR Code</button>
+        </transition>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { ref, defineComponent, watchEffect, onMounted, Ref } from "vue";
+import { ref, defineComponent, onMounted } from "vue";
 import { useRoute } from 'vue-router';
 import {useStore} from "vuex";
 import backendImageFilePathService from "../services/backendImageService"
@@ -28,32 +38,31 @@ export default defineComponent({
     const userStatuses = ["INIT", "LOADING", "SUCCESS", "FAIL"]
     const userStatus = ref(userStatuses[0])
     const userInfo = ref({})
+    const tokenInfo = ref([])
+    const showImage = ref(false)
 
     onMounted( () => {
-      const isLoggedInUser = route.params.username === store.getters["authUser/authenticated"]
-
-      if(!isLoggedInUser) {
-        store.dispatch("authUser/checkAuth")
-        fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + route.params.username)
-            .then((response) => {
-              if (response.status !== 200) {
-                userStatus.value = userStatuses[3]
-                return
-              }
-              return response.json()
-            })
-            .then((result) => {
-              userInfo.value = result
-              userInfo.value.avatar = backendImageFilePathService(result.avatar)
-            })
-            .catch((error) => console.log(error));
-        } else {
-          userInfo.value = store.state.getters["authUser/user"]
-        }
+      store.dispatch("authUser/checkAuth")
+      fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + route.params.username)
+          .then((response) => {
+            if (response.status !== 200) {
+              userStatus.value = userStatuses[3]
+              return
+            }
+            return response.json()
+          })
+          .then((result) => {
+            userInfo.value = result
+            userInfo.value.avatar = backendImageFilePathService(result.avatar)
+            tokenInfo.value = result.token
+          })
+          .catch((error) => console.log(error));
     })
     return {
       username,
       userInfo,
+      tokenInfo,
+      showImage
     }
   }
 })

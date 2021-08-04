@@ -5,7 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"os"
-	"valorize-app/models"
+	"strconv"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
 )
@@ -54,34 +54,21 @@ func (eth *EthHandler) CreateWalletFromRequest(c echo.Context) error {
 func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 	tokenName := c.FormValue("tokenName")
 	tokenTicker := c.FormValue("tokenTicker")
-	addr, _, _, err := ethereum.LaunchContract(eth.server.BlockChain, tokenName, tokenTicker)
+	addr, tx, _, err := ethereum.LaunchContract(eth.server.BlockChain, tokenName, tokenTicker)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
 		})
 	}
 	user, _ := services.AuthUser(c, *eth.server.DB)
-	wallets := services.GetUserWallets(&user, *eth.server.DB)
 
-	creatorToken := models.Token{
-		UserId:     				user.ID,
-		ContractVersion:    "v0.0.1",
-		Name:               tokenName,
-		Symbol:             tokenTicker,
-		Network:            os.Getenv("ETH_TESTNET"),
-		OwnerAddress:       wallets[0].Address,
-		Address:            addr.String(),
-		User: 							user,
-	}
-
-	err = eth.server.DB.Create(&creatorToken).Error
-
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "could not store contract information: " + err.Error(),
-		})
-	}
-
-	tokenResponse := models.GetTokenResponse(&creatorToken)
-	return c.JSON(http.StatusOK, tokenResponse)
+	return c.JSON(http.StatusOK, map[string]string{
+		"user_id":          strconv.Itoa(int(user.ID)),
+		"contract_version": "v0.0.1",
+		"name":             tokenName,
+		"symbol":           tokenTicker,
+		"network":          os.Getenv("ETH_TESTNET"),
+		"address":          addr.String(),
+		"tx":               tx.Hash().String(),
+	})
 }

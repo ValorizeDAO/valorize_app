@@ -29,7 +29,7 @@ const routes = [
     component: EditProfilePage,
   },
   {
-    path: "/:username",
+    path: "/u/:username",
     name: "Show Profile",
     component: ProfilePage,
   },
