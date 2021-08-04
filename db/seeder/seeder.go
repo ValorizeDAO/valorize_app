@@ -10,7 +10,7 @@ import (
 
 func RunSeeder(db *gorm.DB) error{
   user, err := UserSeeder(db, "javier123454321", "test@test.com", "test", true)
-  UserSeeder(db, "zselyke", "test@test2.com", "test")
+  UserSeeder(db, "zselyke", "test@test2.com", "test", false)
   creatorToken := models.Token{
     UserId:          user.ID,
     ContractVersion: "v0.0.1",
