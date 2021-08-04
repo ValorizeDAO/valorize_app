@@ -43,7 +43,7 @@ func main() {
 	e.POST("/login", auth.Login)
 	e.GET("/logout", auth.Logout)
 	e.POST("/register", auth.Register)
-	e.POST("/create-checkout-session", payment.CreateCheckoutSession)
+	e.GET("/create-checkout-session", payment.CreateCheckoutSession)
 	e.GET("/eth", eth.Ping)
 	e.POST("/payments/successhook", payment.OnPaymentAccepted)
 
