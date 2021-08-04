@@ -1,10 +1,10 @@
 import { Token } from "../models/Token"
 
 export default {
-  async deployTokenFromBackend({ tokenName, tokenTiker }: { tokenName: string, tokenTiker: string }): Promise<any> {
+  async deployTokenFromBackend({ tokenName, tokenSymbol }: { tokenName: string, tokenSymbol: string }): Promise<any> {
     var formdata = new FormData();
     formdata.append("tokenName", tokenName);
-    formdata.append("tokenTicker", tokenTiker);
+    formdata.append("tokenTicker", tokenSymbol);
 
     var requestOptions = {
       method: 'POST',

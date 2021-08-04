@@ -137,11 +137,12 @@ export default defineComponent({
       console.log('test')
       fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + usernameToTest.value)
         .then((response) => {
-          console.log({ response });
-          if (response.status !== 200) {
+          if (response.status === 404) {
             userNameAvailable.value = true;
-          } else {
+          } else if( response.status === 200 ){
             userNameAvailable.value = false;
+          } else {
+
           }
           return response.json();
         })
@@ -178,7 +179,7 @@ export default defineComponent({
         .then((result) => {
           if (!result.error) {
             store.state.commit("authUser/authenticated", true);
-            router.push("/profile");
+            router.push("/edit-profile");
           }
         })
         .catch((error) => console.log("error", error));

@@ -9,39 +9,25 @@
         </div>
         <div class="col-span-2">
           <div class="relative mt-6 -ml-2">
-            <div
-              class="
-                h-52
-                w-52
-                absolute
-                transform
-                translate-x-2
-                -translate-y-2
-                overflow-hidden
-              "
-            >
-              <div 
-                v-if="pictureStatus === 'INIT'">
-                <img class="h-52 w-52  object-cover" :src="user.avatar" alt="avatar" />
-              </div>
-              <div 
-                v-else 
-                >
+            <ImageContainer>
+              <div v-if="pictureStatus === 'INIT'">
                 <img
+                  :src="user.avatar"
+                  alt="avatar"
                   class="h-52 w-52 object-cover"
+                />
+              </div>
+              <div v-else>
+                <img
                   :src="
                     profileImage === ''
                       ? '/src/assets/img/default_avatar.png'
                       : profileImage
                   "
+                  class="h-52 w-52 object-cover"
                 />
               </div>
-            </div>
-            <img
-              class="h-52 w-52"
-              src="../assets/img/dotted_shadow.png"
-              alt="dotted shadow"
-            />
+            </ImageContainer>
           </div>
           <transform name="fade">
             <div v-if="pictureStatus === 'INIT'">
@@ -138,41 +124,105 @@
         />
       </label>
       <label>
-        <p class="font-black my-4">Token Ticker</p>
+        <p class="font-black my-4">Token Symbol</p>
         <input
           type="text"
-          name="tokenTiker"
+          name="tokenSymbol"
           id="token-tiker"
-          v-model="tokenTiker"
+          v-model="tokenSymbol"
+          placeholder="e.g TKN"
           class="bg-paper-light border-black border-b-2 w-full"
         />
       </label>
       <div class="text-center">
         <p class="my-8">(Get 1000 of this token by deploying the contract)</p>
         <button @click="openModal" class="btn w-48 my-4 bg-paper-darker">
-          Test Deploy
+          Test Deploy {{ tokenSymbol }}
         </button>
       </div>
       <div
+        @click.stop="openModal"
         v-if="modalIsOpen"
-        class="h-screen w-screen absolute top-0 left-0 bg-paper-lighter"
+        class="
+          h-screen
+          w-screen
+          absolute
+          top-0
+          left-0
+          bg-black bg-opacity-50
+          flex
+          justify-center
+          items-center
+        "
       >
-        <div class="flex w-full justify-between px-16 py-10">
-          <button @click="openModal">X</button>
-        </div>
-        <div class="my-4 mx-auto">
-          <h1 class="text-lg">Deploy <span class="font-black">{{ tokenName }}</span></h1>
-          <transition name="fade">
-            <div v-if="tokenDeployStatus === 'INIT' || tokenDeployStatus === 'ERROR'">
-              <button @click="deployToTestNet" class="btn w-48 my-4 bg-paper-darker">
-                Deploy to Test Net
-              </button>
-            </div>
-            <SvgLoader v-else-if="tokenDeployStatus === 'DEPLOYING'" fill="purple"></SvgLoader>
-            <div v-else-if="tokenDeployStatus === 'SUCCESS'">
-              <a  :href="'https://ropsten.etherscan.io/address/' + tokenTestnetAddress" target="_blank">See on Testnet</a>(Takes a few minutes to load)
-            </div>
-          </transition>
+        <div
+          id="modal-body"
+          @click.stop
+          class="bg-paper-light min-w-md h-80 mx-auto px-10"
+        >
+          <div class="flex w-full justify-end">
+            <button
+              @click="openModal"
+              class="my-2 -ml-8 p-1 border-black border rounded"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="my-4 mx-auto">
+            <transition name="fade">
+              <div
+                v-if="
+                  tokenDeployStatus === 'INIT' || tokenDeployStatus === 'ERROR'
+                "
+              >
+                <h1 class="text-lg">
+                  Deploy <span class="font-black">{{ tokenName }}</span>
+                </h1>
+                <button
+                  @click="deployToTestNet"
+                  class="btn w-48 my-4 bg-purple-50 my-4"
+                >
+                  Test Deploy {{ tokenSymbol }}
+                </button>
+              </div>
+              <SvgLoader
+                v-else-if="tokenDeployStatus === 'DEPLOYING'"
+                fill="#"
+              ></SvgLoader>
+              <div
+                v-else-if="tokenDeployStatus === 'SUCCESS'"
+                class="text-center my-6"
+              >
+                <h2 class="text-2xl">
+                  Congratulations, {{ tokenName }} is on the test net!
+                </h2>
+                <a
+                  class="font-black underline text-center"
+                  :href="
+                    'https://ropsten.etherscan.io/address/' +
+                    tokenTestnetAddress
+                  "
+                  target="_blank"
+                  >See on EtherScan</a
+                >
+                <p class="mb-12">(Takes a few minutes to load)</p>
+                <a :href="checkoutLink" class="btn bg-purple-100 mt-12"
+                  >Deploy on Ethereum for $10</a
+                >
+              </div>
+            </transition>
+          </div>
         </div>
       </div>
     </div>
@@ -185,11 +235,12 @@ import auth from "../services/authentication";
 import { User } from "../models/user";
 import ethApi, { TokenResponse } from "../services/ethApi";
 import { useStore } from "vuex";
-import SvgLoader from "../components/SvgLoader.vue"
+import SvgLoader from "../components/SvgLoader.vue";
+import ImageContainer from "../components/ImageContainer.vue";
 export default defineComponent({
   name: "EditProfilePage",
   props: {},
-  components: { SvgLoader },
+  components: { SvgLoader, ImageContainer },
   setup() {
     return {
       ...composeProfileInfo(),
@@ -202,7 +253,7 @@ function composeProfileInfo() {
   const store = useStore();
   const fullName = ref(store.state.authUser.user.name);
   const about = ref(store.state.authUser.user.about);
-  
+
   const profileUpdateStatuses = [
     "INIT",
     "EDITED",
@@ -212,16 +263,16 @@ function composeProfileInfo() {
   ];
   const profileUpdateStatus = ref(profileUpdateStatuses[0]);
   async function updateProfile() {
-    profileUpdateStatus.value = profileUpdateStatus[2];
+    profileUpdateStatus.value = profileUpdateStatuses[2];
     const response = await auth.updateProfile({
       name: fullName.value,
       about: about.value,
     });
     if (response.status !== 200) {
-      profileUpdateStatus.value = profileUpdateStatus[3];
+      profileUpdateStatus.value = profileUpdateStatuses[3];
       return;
     }
-    profileUpdateStatus.value = profileUpdateStatus[4];
+    profileUpdateStatus.value = profileUpdateStatuses[4];
     const userData = (await response.json()) as Promise<User>;
     store.commit("authUser/setUser", userData);
   }
@@ -239,7 +290,7 @@ function composeUpdateImage() {
   const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "ERROR"];
   const pictureStatus = ref(pictureStatuses[0]);
   function changeProfile() {
-    (pictureFormUpload.value as HTMLInputElement).click();
+    (pictureFormUpload.value as unknown as HTMLInputElement).click();
   }
   function changePic(e) {
     var files = e.target.files || e.dataTransfer.files;
@@ -250,21 +301,21 @@ function composeUpdateImage() {
     }
     var reader = new FileReader();
 
-    reader.onload = (e) => {
-      profileImage.value = e.target.result;
+    reader.onload = (e: Event) => {
+      profileImage.value = e?.target?.result;
     };
     reader.readAsDataURL(
-      (pictureFormUpload.value as HTMLInputElement).files[0]
+      (pictureFormUpload.value as unknown as HTMLInputElement).files[0]
     );
   }
   async function sendPhoto() {
     pictureStatus.value = pictureStatuses[2];
     const uploadRequest = await auth.uploadPicture(
-      (pictureFormUpload.value as HTMLInputElement).files[0]
+      (pictureFormUpload.value as unknown as HTMLInputElement).files[0]
     );
     if (uploadRequest.status == 200) {
       pictureStatus.value = pictureStatuses[0];
-      const responseJson = await (uploadRequest.json() as Promise<{
+      const responseJson = await ((await uploadRequest.json()) as Promise<{
         image: string;
       }>);
       store.commit(
@@ -278,8 +329,8 @@ function composeUpdateImage() {
   function resetPhoto() {
     pictureStatus.value = pictureStatuses[0];
     profileImage.value = store.state.authUser.user.avatar;
-    (pictureFormUpload.value as HTMLInputElement).outerHTML = (
-      pictureFormUpload.value as HTMLInputElement
+    (pictureFormUpload.value as unknown as HTMLInputElement).outerHTML = (
+      pictureFormUpload.value as unknown as HTMLInputElement
     ).outerHTML;
   }
   return {
@@ -295,17 +346,20 @@ function composeUpdateImage() {
 }
 function composeDeployToken() {
   const store = useStore();
-  const tokenName = ref(store.state.authUser.user.username + ' token');
-  const tokenTiker = ref("TKN");
+  const tokenName = ref(store.state.authUser.user.username + " token");
+  const tokenSymbol = ref("TKN");
   const modalIsOpen = ref(false);
   const tokenDeployStatuses = ["INIT", "DEPLOYING", "SUCCESS", "ERROR"];
-  const tokenDeployStatus = ref(tokenDeployStatuses[0]);
-  const tokenTestnetAddress = ref("")
+  const tokenDeployStatus = ref(tokenDeployStatuses[2]);
+  const tokenTestnetAddress = ref("");
+  const checkoutLink = ref(
+    import.meta.env.VITE_BACKEND_URL + "/create-checkout-session"
+  );
   async function deployToTestNet() {
     tokenDeployStatus.value = tokenDeployStatuses[1];
     const apiResponse = await ethApi.deployTokenFromBackend({
       tokenName: tokenName.value,
-      tokenTiker: tokenTiker.value,
+      tokenSymbol: tokenSymbol.value,
     });
     if (apiResponse.status == 200) {
       tokenDeployStatus.value = tokenDeployStatuses[2];
@@ -316,23 +370,22 @@ function composeDeployToken() {
       tokenDeployStatus.value = tokenDeployStatuses[3];
     }
   }
-  function openModal() {
+  function openModal(e: Event) {
+    console.log(e);
     modalIsOpen.value = !modalIsOpen.value;
   }
   return {
     tokenName,
-    tokenTiker,
+    tokenSymbol,
     modalIsOpen,
     deployToTestNet,
     openModal,
     tokenDeployStatus,
     tokenTestnetAddress,
+    checkoutLink,
   };
 }
 </script>
 
 <style scoped lang="postcss">
-.btn {
-  @apply px-4 py-2 cursor-pointer border-2 border-black rounded-md font-black;
-}
 </style>

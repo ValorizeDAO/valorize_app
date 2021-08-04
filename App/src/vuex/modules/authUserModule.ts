@@ -1,5 +1,7 @@
 import { ActionContext } from "vuex"
 import { User, emptyUser } from "../../models/user"
+import auth from "../../services/authentication"
+import backendImageFilePathService from "../../services/backendImageService"
 
 export default {
   namespaced: true,
@@ -32,24 +34,32 @@ export default {
       state.authenticated = true // assumes setUser is only called by logging in
       state.checkingAuth = false
       state.user = payload
-      state.user.avatar = setUserPicturePrefix(state.user.avatar)
+      state.user.avatar = backendImageFilePathService(state.user.avatar)
     },
     setUserPicture(state: UserState, payload: string) {
-      state.user.avatar = setUserPicturePrefix(payload)
+      state.user.avatar = backendImageFilePathService(payload)
     },
     logout(state: UserState) {
       state.authenticated = false
       state.user = emptyUser
     },
   },
-}
-
-function setUserPicturePrefix(filename: string): string {
-  return (
-    import.meta.env.VITE_BACKEND_URL +
-    "/static/images/" +
-    (filename || "default_avatar.jpg")
-  )
+  actions: {
+    async checkAuth({ commit, state }: ActionContext<UserState, any>) {
+      if (state.checkingAuth) {
+        return
+      }
+      state.checkingAuth = true
+      const { isLoggedIn, user } = await auth.isLoggedIn()
+      if (isLoggedIn) {
+        commit("authenticated", true)
+        commit("setUser", user)
+      } else {
+        commit("authenticated", false)
+      }
+      state.checkingAuth = false
+    }
+  }
 }
 
 interface UserState {
