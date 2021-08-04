@@ -7,7 +7,7 @@
       </ImageContainer>
       <p class="mt-8">{{ userInfo.about }}</p>
     </div>
-    <div id="token-info" class="col-span-7 pl-16 min-h-screen pt-8 border-r-2 border-black">
+    <div id="token-info" class="col-span-7 px-16 min-h-screen pt-8 border-black">
       <div v-if="tokenInfo">
         <h2 class="font-black text-2xl">
           {{tokenInfo.name}} ({{tokenInfo.symbol}})
@@ -19,10 +19,10 @@
           <img v-if="showImage" class="rounded border-2 border-black p-6 bg-purple-100" :src="'https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl='+tokenInfo.address+'&choe=UTF-8'" alt="">
           <button v-else @click.prevent="showImage=true" class="btn bg-burple-100 mb-4 w-48">Show QR Code</button>
         </transition>
-        <div id="coin-data" class="flex justify-between">
+        <div id="coin-data" class="flex justify-between flex-wrap">
           <div>Price Per Coin: {{ tokenPrice }}</div>
           <div>Total Supply: {{ tokenCap }}</div>
-          <div>USD locked in {{tokenInfo.symbol}}: {{ tokenEthBalance }}</div>
+          <div>USD locked in <strong>{{tokenInfo.symbol}}</strong> {{ tokenEthBalance * ethPrice }}</div>
         </div>
       </div>
     </div>
@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts">
-import { ref, defineComponent, onMounted } from "vue";
+import { ref, defineComponent, onMounted, computed } from "vue";
 import { useRoute } from 'vue-router';
 import {useStore} from "vuex";
 import backendImageFilePathService from "../services/backendImageService"
@@ -84,11 +84,13 @@ function composeTokenInfo() {
   const store = useStore();
   const userStatuses = ["INIT", "LOADING", "SUCCESS", "FAIL"]
   const userStatus = ref(userStatuses[0])
-  const tokenPrice = ref(0)
   const tokenCap = ref(0)
   const tokenEthBalance = ref(0)
-  onMounted( () => {
-    store.dispatch("authUser/checkAuth")
+  const ethPrice = ref(0.0)
+  const tokenPrice = computed(() => {
+    return (ethPrice.value * tokenEthBalance.value )/ tokenCap.value
+  })
+  onMounted(async () => {
     fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + route.params.username + "/token")
       .then((response) => {
         if (response.status !== 200) {
@@ -98,16 +100,30 @@ function composeTokenInfo() {
         return response.json()
       })
       .then((result) => {
-        tokenPrice.value = parseInt(result["ether_staked"])
+        tokenEthBalance.value = parseInt(result["ether_staked"])
         tokenCap.value = parseInt(result["total_minted"])
       })
       .catch((error) => console.log(error));
+    fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/utils/price")
+      .then((response) => {
+        if (response.status !== 200) {
+          userStatus.value = userStatuses[3]
+          return
+        }
+        return response.json()
+      })
+      .then((result) => {
+        ethPrice.value = parseFloat(result["USD"])
+      })
+      .catch((error) => console.log(error));
   })
+    //fetch utils/prce to map to tokenPrice
 
   return {
     tokenPrice,
     tokenCap,
-    tokenEthBalance
+    tokenEthBalance,
+    ethPrice,
   }
 }
 </script>
