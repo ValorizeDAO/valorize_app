@@ -14,6 +14,6 @@ func main() {
 	if os.Getenv("ENVIRONMENT") == "DEVELOPMENT" {
 		e.Logger.Fatal(e.Start(":1323"))
 	} else {
-		e.Logger.Fatal(e.Start(":8080"))
+		e.Logger.Fatal(e.Start(":" + os.Getenv("PORT")))
 	}
 }
