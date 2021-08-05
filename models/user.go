@@ -4,31 +4,37 @@ import "github.com/jinzhu/gorm"
 
 type User struct {
 	gorm.Model
-	Email    string `json:"email" gorm:"type:varchar(200);"`
-	Name     string `json:"name" gorm:"type:varchar(200);"`
-	Username string `json:"username" gorm:"type:varchar(200);unique;"`
-	Password string `json:"password" gorm:"type:varchar(200);"`
-	Avatar   string `json:"avatar" gorm:"type:varchar(200);"`
-	About    string `json:"about" gorm:"type:varchar(1000);"`
-	Wallets  []Wallet
-	Tokens   []Token
+	Email            string   `json:"email" gorm:"type:varchar(200);"`
+	Name             string   `json:"name" gorm:"type:varchar(200);"`
+	Username         string   `json:"username" gorm:"type:varchar(200);unique;"`
+	Password         string   `json:"password" gorm:"type:varchar(200);"`
+	Avatar           string   `json:"avatar" gorm:"type:varchar(200);"`
+	About            string   `json:"about" gorm:"type:varchar(1000);"`
+	HasDeployedToken bool     `json:"has_deployed_token gorm:boolean"`
+	HasVerifiedEmail bool     `json:"has_verified_email gorm:boolean"`
+	Token            Token    `json:"token" gorm:"ForeignKey:UserId;AssociationForeignKey:ID"`
+	Wallets          []Wallet `json:"wallets" gorm:"ForeignKey:userId;AssociationForeignKey:user_id"`
 }
 
 type UserProfile struct {
+	ID               uint   `json:"id"`
+	Email            string `json:"email"`
+	Name             string `json:"name"`
+	Username         string `json:"username"`
+	Avatar           string `json:"avatar"`
+	About            string `json:"about"`
+	HasDeployedToken bool   `json:"has_deployed_token"`
+	HasVerifiedEmail bool   `json:"has_verified_email"`
+	Token            Token  `json:"token"`
+}
+
+type UserPublicProfile struct {
 	ID       uint   `json:"id"`
-	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	Avatar   string `json:"avatar"`
 	About    string `json:"about"`
-}
-
-type UserPublicProfile struct {
-	ID       uint
-	Name     string
-	Username string
-	Avatar   string
-	About    string
+	Token    Token  `json:"token"`
 }
 
 func GetUserProfile(user *User) UserProfile {
@@ -39,7 +45,10 @@ func GetUserProfile(user *User) UserProfile {
 		user.Username,
 		user.Avatar,
 		user.About,
-		}
+		user.HasDeployedToken,
+		user.HasVerifiedEmail,
+		user.Token,
+	}
 }
 
 func GetUserPublicProfile(user *User) UserPublicProfile {
@@ -49,6 +58,7 @@ func GetUserPublicProfile(user *User) UserPublicProfile {
 		user.Username,
 		user.Avatar,
 		user.About,
+		user.Token,
 	}
 }
 
@@ -76,7 +86,7 @@ func GetUserByEmail(e string, db gorm.DB) (User, error) {
 
 func GetUserByUsername(username string, db gorm.DB) (User, error) {
 	var m User
-	if err := db.Where(&User{Username: username}).First(&m).Error; err != nil {
+	if err := db.Preload("Token").Where("username = ?", username).First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return User{}, err
 		}

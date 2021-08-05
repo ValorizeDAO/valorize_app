@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/labstack/echo/v4"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/checkout/session"
 	"github.com/stripe/stripe-go/v72/webhook"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -45,7 +43,7 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 					Currency: stripe.String("usd"),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name: stripe.String("Deploy Token"),
+						Name: stripe.String("Deploy " + tokenName + " (" + tokenSymbol + ")"),
 					},
 					UnitAmount: stripe.Int64(1000),
 				},
@@ -53,13 +51,13 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 			},
 		},
 		ClientReferenceID: stripe.String(strconv.FormatUint(uint64(user.ID), 10)),
-		//TODO: use environment variable
-		SuccessURL: stripe.String(os.Getenv("FRONTEND_URL") + "/" + user.Username),
-		CancelURL:  stripe.String(os.Getenv("FRONTEND_URL") + "/edit-profile"),
+		SuccessURL:        stripe.String(os.Getenv("FRONTEND_URL") + "/u/" + user.Username),
+		CancelURL:         stripe.String(os.Getenv("FRONTEND_URL") + "/edit-profile"),
 	}
-	params.AddMetadata("token", tokenName)
+	params.AddMetadata("name", tokenName)
 	params.AddMetadata("symbol", tokenSymbol)
 
+	fmt.Printf("name: %v, symbol: %v", tokenName, tokenSymbol)
 	s, err := session.New(params)
 
 	if err != nil {
@@ -68,25 +66,13 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 
 	return c.Redirect(http.StatusSeeOther, s.URL)
 }
-func (payment *PaymentHandler) _fulfillOrder(session stripe.CheckoutSession) (common.Address, *types.Transaction, *contracts.CreatorToken, error){
-	var clientUrl string
-	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
-		clientUrl = os.Getenv("MAINNET_NODE")
-	} else {
-		clientUrl = os.Getenv("ETH_NODE")
-	}
-	client, err := ethclient.Dial(clientUrl)
-
-	if err != nil {
-		log.Println(err)
-	} else {
-		fmt.Println("=======================\n\nConnected to ethereum mainnet\n\n=======================")
-	}
+func (payment *PaymentHandler) _fulfillOrder(session stripe.CheckoutSession) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
+	client, err := ethereum.MainnetConnection()
 
 	addr, tx, instance, err := ethereum.LaunchContract(client, session.Metadata["name"], session.Metadata["symbol"])
 
 	if err != nil {
-		 fmt.Println("error: " + err.Error())
+		fmt.Println("error: " + err.Error())
 	}
 
 	return addr, tx, instance, err
@@ -125,6 +111,12 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 		addr, tx, _, err := payment._fulfillOrder(session)
 		customerId32bit, _ := strconv.ParseUint(session.ClientReferenceID, 10, 32)
 		user, err := models.GetUserByID(uint(customerId32bit), *payment.Server.DB)
+
+		fmt.Printf(`
+==============================================================================================
+    contracti by owner %v deployed to address %v
+==============================================================================================
+`, user.ID, addr.String())
 		if err != nil {
 			payment.Server.Echo.Logger.Error(map[string]string{
 				"message": "error accepting payment for " + string(session.ClientReferenceID),
@@ -139,18 +131,24 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 			Network:         "MAINNET",
 			OwnerAddress:    os.Getenv("HOTWALLET"),
 			Address:         addr.String(),
-			User:            user,
 			TxHash:          tx.Hash().String(),
 		}
 
 		err = payment.Server.DB.Create(&creatorToken).Error
-
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{
 				"error": "could not store contract information: " + err.Error(),
 			})
 		}
 
+		user.HasDeployedToken = true
+		err = payment.Server.DB.Save(&user).Error
+
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "could not update user info: " + err.Error(),
+			})
+		}
 		return c.JSON(http.StatusOK, map[string]string{
 			"data": "payment accepted",
 		})

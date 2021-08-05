@@ -32,6 +32,22 @@ func Connect() (*ethclient.Client, error) {
 	}
 	return client, err
 }
+func MainnetConnection() (*ethclient.Client, error) {
+	var clientUrl string
+	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
+		clientUrl = os.Getenv("MAINNET_NODE")
+	} else {
+		clientUrl = os.Getenv("ETH_NODE")
+	}
+	client, err := ethclient.Dial(clientUrl)
+
+	if err != nil {
+		log.Println(err.Error())
+	} else {
+		fmt.Println("=======================\n\nConnected to ethereum mainnet\n\n=======================")
+	}
+	return client, err
+}
 
 func NewKeystore(password string) (accounts.Account, error) {
 	ks := keystore.NewKeyStore("./wallets", keystore.StandardScryptN, keystore.StandardScryptP)
@@ -75,11 +91,11 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 
 	_check(err)
 
-	gasPrice , err := GetGasPrice()
+	gasPrice, err := GetGasPrice()
 	_check(err)
 	auth, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
-	auth.Value = big.NewInt(0)              // in wei
-	auth.GasLimit = uint64(4000000)         // in units
+	auth.Value = big.NewInt(0)      // in wei
+	auth.GasLimit = uint64(4000000) // in units
 	auth.GasPrice = big.NewInt(gasPrice)
 	fmt.Printf("Gas Price: %v", gasPrice)
 	address, tx, instance, err := contracts.DeployCreatorToken(auth, client, big.NewInt(1000), name, ticker)
@@ -90,14 +106,13 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	return address, tx, instance, nil
 }
 
-func GetGasPrice() (int64, error){
+func GetGasPrice() (int64, error) {
 	url := "https://ropsten.infura.io/v3/9fe1c768748943aabc2cfdef6158ee9c"
 	method := "POST"
 
 	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":1}`)
 
-	client := &http.Client {
-	}
+	client := &http.Client{}
 	req, err := http.NewRequest(method, url, payload)
 
 	if err != nil {
@@ -133,8 +148,8 @@ func hexaNumberToInteger(hexaString string) string {
 	return numberStr
 }
 
-type GasPriceStruct struct{
+type GasPriceStruct struct {
 	Jsonrpc string `json:"jsonrpc"`
-	Id uint `json:"id"`
-	Result string `json:"result"`
+	Id      uint   `json:"id"`
+	Result  string `json:"result"`
 }

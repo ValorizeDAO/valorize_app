@@ -1,10 +1,10 @@
 import { Token } from "../models/Token"
 
 export default {
-  async deployTokenFromBackend({ tokenName, tokenTiker }: { tokenName: string, tokenTiker: string }): Promise<any> {
+  async deployTokenToTestNet({ tokenName, tokenSymbol }: { tokenName: string, tokenSymbol: string }): Promise<any> {
     var formdata = new FormData();
     formdata.append("tokenName", tokenName);
-    formdata.append("tokenTicker", tokenTiker);
+    formdata.append("tokenTicker", tokenSymbol);
 
     var requestOptions = {
       method: 'POST',
@@ -20,6 +20,11 @@ export default {
 }
 
 export interface TokenResponse {
-  status: string, 
-  token: Token
+  address: string;
+  contract_version: string;
+  name: string;
+  network: string;
+  symbol: string;
+  tx: string;
+  user_id: string;
 }
