@@ -13,19 +13,25 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
-	db := db.Init(cfg)
-	m := GetMigrations(db)
+	database := db.Init(cfg)
+	m := GetMigrations(database)
 	err := m.Migrate()
 	if err == nil {
 		print("Migrations did run successfully, seeding now")
 	} else {
 		print("migrations failed.", err)
 	}
-	seeder.RunSeeder(db)
+	err = seeder.RunSeeder(database)
+	if err == nil {
+		print("seeding did run successfully")
+	} else {
+		print("seeding failed.", err)
+	}
+
 }
-func GetMigrations(db *gorm.DB) *gormigrate.Gormigrate {
+func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 	timeNow := strconv.FormatUint(uint64(time.Now().Unix()), 10)
-	return gormigrate.New(db, gormigrate.DefaultOptions, []*gormigrate.Migration{
+	return gormigrate.New(database, gormigrate.DefaultOptions, []*gormigrate.Migration{
 		{
 			ID: timeNow + "_migration",
 			Migrate: func(tx *gorm.DB) error {
@@ -60,11 +66,3 @@ func GetMigrations(db *gorm.DB) *gormigrate.Gormigrate {
 	})
 }
 
-//func getMigrationsList() []gmStore.Migratable {
-//	return []gmStore.Migratable{
-//		&list.CreateUserTable{},
-//		&list.CreateWalletTable{},
-//		&list.UpdateUserTable{},
-//		&list.CreateTokenTable{},
-//	}
-//}
