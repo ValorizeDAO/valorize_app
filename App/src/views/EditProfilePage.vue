@@ -4,8 +4,8 @@
     <div id="left-pane" class="md:col-span-7 pl-16 pt-4 h-full">
       <div class="">
         <div class="">
-          <h1 class="text-3xl font-black">Your Profile</h1>
-          <h2 class="text-xl font-black">{{ user.username }}</h2>
+          <h1 class="text-3xl font-black mb-6">Your Profile</h1>
+          <h2 class="text-2xl font-black">{{ user.username }}</h2>
         </div>
         <div class="col-span-2">
           <div class="relative mt-6 -ml-2">
@@ -111,7 +111,10 @@
         bg-paper-light
       "
     >
-      <h3 class="text-3xl font-black">{{ user.username }}'s Token</h3>
+      <h2 class="text-3xl font-black mb-6">Your Token</h2>
+<!--      <TokenInfoComponent v-if="hasToken" :username="user.username" />-->
+<!--      <div v-else>-->
+      <h3 class="text-2xl font-black">{{ user.username }}'s Token</h3>
       ( not yet deployed )
       <label>
         <p class="font-black mb-4">Token Name</p>
@@ -139,6 +142,7 @@
         <button @click="openModal" class="btn w-48 my-4 bg-paper-darker">
           Test Deploy {{ tokenSymbol }}
         </button>
+      </div>
       </div>
       <div
         @click.stop="openModal"
@@ -200,7 +204,7 @@
                 </button>
               </div>
               <SvgLoader
-                class="text-center"
+                class="text-center mx-auto"
                 v-else-if="tokenDeployStatus === 'DEPLOYING'"
                 fill="#"
               ></SvgLoader>
@@ -213,7 +217,7 @@
                 </h1>
                 <p class="my-6">
                   <a
-                      class="font-black underline text-center"
+                      class="font-black underline text-center text-lg"
                       :href="
                     'https://ropsten.etherscan.io/tx/' +
                     tokenTestnetTx
@@ -222,6 +226,7 @@
                   >
                     Confirm details
                   </a>
+                <p>(Might take a minute to Deploy)</p>
                 </p>
                 <a :href="checkoutLink">
                   <div class="btn w-1/2 mx-auto bg-purple-100 mt-12">Deploy on Ethereum for $10</div>
@@ -230,7 +235,7 @@
             </transition>
           </div>
         </div>
-      </div>
+<!--      </div>-->
     </div>
   </div>
 </template>
@@ -243,10 +248,11 @@ import ethApi, { TokenResponse } from "../services/ethApi";
 import { useStore } from "vuex";
 import SvgLoader from "../components/SvgLoader.vue";
 import ImageContainer from "../components/ImageContainer.vue";
+import TokenInfoComponent from "../components/TokenInfoComponent.vue";
 export default defineComponent({
   name: "EditProfilePage",
   props: {},
-  components: { SvgLoader, ImageContainer },
+  components: { SvgLoader, ImageContainer, TokenInfoComponent },
   setup() {
     return {
       ...composeProfileInfo(),
@@ -259,6 +265,7 @@ function composeProfileInfo() {
   const store = useStore();
   const fullName = ref(store.state.authUser.user.name);
   const about = ref(store.state.authUser.user.about);
+  const hasToken = store.getters["authUser/hasToken"]
 
   const profileUpdateStatuses = [
     "INIT",
@@ -287,6 +294,7 @@ function composeProfileInfo() {
     fullName,
     about,
     profileUpdateStatus,
+    hasToken
   };
 }
 function composeUpdateImage() {
@@ -352,7 +360,7 @@ function composeUpdateImage() {
 }
 function composeDeployToken() {
   const store = useStore();
-  const tokenName = ref(store.state.authUser.user.username + " token");
+  const tokenName = ref(store.state.authUser.user.username + "Coin");
   const tokenSymbol = ref("TKN");
   const modalIsOpen = ref(false);
   const tokenDeployStatuses = ["INIT", "DEPLOYING", "SUCCESS", "ERROR"];

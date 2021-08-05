@@ -9,6 +9,7 @@ export default {
     return {
       checkingAuth: false,
       authenticated: false,
+      hasToken: false,
       user: {
         id: 0,
         email: "",
@@ -24,6 +25,7 @@ export default {
     user: (state: UserState) => state.user,
     checkingAuth: (state: UserState) => state.checkingAuth,
     profileImage: (state: UserState) => state.user.avatar,
+    hasToken: (state: UserState) => state.hasToken,
   },
   mutations: {
     authenticated(state: UserState, payload: boolean) {
@@ -35,6 +37,9 @@ export default {
       state.checkingAuth = false
       state.user = payload
       state.user.avatar = backendImageFilePathService(state.user.avatar)
+      if (payload.has_deployed_token) {
+        state.hasToken = true
+      }
     },
     setUserPicture(state: UserState, payload: string) {
       state.user.avatar = backendImageFilePathService(payload)
@@ -65,5 +70,6 @@ export default {
 interface UserState {
   checkingAuth: boolean,
   authenticated: boolean,
+  hasToken: boolean,
   user: User
 }

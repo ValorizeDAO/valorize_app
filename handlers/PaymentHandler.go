@@ -43,7 +43,7 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 					Currency: stripe.String("usd"),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name: stripe.String("Deploy Token"),
+						Name: stripe.String("Deploy " + tokenName + " (" + tokenSymbol + ")"),
 					},
 					UnitAmount: stripe.Int64(1000),
 				},
@@ -51,9 +51,8 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 			},
 		},
 		ClientReferenceID: stripe.String(strconv.FormatUint(uint64(user.ID), 10)),
-		//TODO: use environment variable
-		SuccessURL: stripe.String(os.Getenv("FRONTEND_URL") + "/" + user.Username),
-		CancelURL:  stripe.String(os.Getenv("FRONTEND_URL") + "/edit-profile"),
+		SuccessURL:        stripe.String(os.Getenv("FRONTEND_URL") + "/u/" + user.Username),
+		CancelURL:         stripe.String(os.Getenv("FRONTEND_URL") + "/edit-profile"),
 	}
 	params.AddMetadata("name", tokenName)
 	params.AddMetadata("symbol", tokenSymbol)
@@ -112,11 +111,18 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 		addr, tx, _, err := payment._fulfillOrder(session)
 		customerId32bit, _ := strconv.ParseUint(session.ClientReferenceID, 10, 32)
 		user, err := models.GetUserByID(uint(customerId32bit), *payment.Server.DB)
+
+		fmt.Printf(`
+==============================================================================================
+    contracti by owner %v deployed to address %v
+==============================================================================================
+`, user.ID, addr.String())
 		if err != nil {
 			payment.Server.Echo.Logger.Error(map[string]string{
 				"message": "error accepting payment for " + string(session.ClientReferenceID),
 			})
 		}
+
 		creatorToken := models.Token{
 			UserId:          user.ID,
 			ContractVersion: "v0.0.1",
@@ -135,6 +141,14 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 			})
 		}
 
+		user.HasDeployedToken = true
+		err = payment.Server.DB.Save(&user).Error
+
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "could not update user info: " + err.Error(),
+			})
+		}
 		return c.JSON(http.StatusOK, map[string]string{
 			"data": "payment accepted",
 		})

@@ -103,6 +103,7 @@ import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import SvgLoader from "../components/SvgLoader.vue";
 import useDebounced from "../composed/useDebounced";
+import {User} from "../models/User";
 
 export default defineComponent({
   name: "Register",
@@ -152,7 +153,6 @@ export default defineComponent({
 
     async function sendLogin() {
       status.value = requestStatuses[1];
-
       const formdata = new FormData();
       formdata.append("username", username.value);
       formdata.append("password", password.value);
@@ -161,28 +161,22 @@ export default defineComponent({
       const requestOptions = {
         method: "POST",
         body: formdata,
-        redirect: "follow",
+        credentials: "include"
       } as RequestInit;
 
-      fetch(import.meta.env.VITE_BACKEND_URL + "/register", requestOptions)
-        .then((response) => {
-          console.log(response);
-          if (response.status === 409) {
-            status.value = requestStatuses[2];
-          } else if (response.status === 201) {
-            status.value = requestStatuses[4];
-          } else {
-            status.value = requestStatuses[3];
-          }
-          return response.json();
-        })
-        .then((result) => {
-          if (!result.error) {
-            store.state.commit("authUser/authenticated", true);
-            router.push("/edit-profile");
-          }
-        })
-        .catch((error) => console.log("error", error));
+      const response = await fetch(import.meta.env.VITE_BACKEND_URL + "/register", requestOptions)
+      console.log({ response })
+      if (response.status === 409) {
+        status.value = requestStatuses[2];
+      } else if (response.status === 201) {
+        status.value = requestStatuses[4];
+        const result = (await response.json() as User | { error: string })
+        console.log({ result })
+        store.commit("authUser/setUser", result);
+        router.push({ path: "/edit-profile" });
+      } else {
+        status.value = requestStatuses[3];
+      }
     }
 
     return {

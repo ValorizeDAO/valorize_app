@@ -21,6 +21,7 @@
         <router-link to="/register">Register</router-link>
       </div>
       <div v-else class="flex">
+        <router-link to="/edit-profile" class="mr-4">Edit Profile</router-link>
         <button @click="logout">Logout</button>
       </div>
     </nav>
@@ -61,7 +62,7 @@ export default defineComponent({
     async logout() {
       await auth.logout();
       this.$store.commit("authUser/logout");
-      this.$router.push("login");
+      this.$router.push("/login");
     },
   },
   computed: {
