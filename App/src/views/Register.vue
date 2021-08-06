@@ -135,7 +135,6 @@ export default defineComponent({
 
     async function fetchUserName(usernameToTest: Ref<string>) {
       username.value = usernameToTest.value;
-      console.log('test')
       fetch(import.meta.env.VITE_BACKEND_URL + "/api/v0/users/" + usernameToTest.value)
         .then((response) => {
           if (response.status === 404) {
@@ -194,21 +193,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.spinner {
-  animation: rotate 2s linear infinite;
-  z-index: 2;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin: -25px 0 0 -25px;
-  width: 50px;
-  height: 50px;
-}
-.spinner .path {
-  stroke: hsl(210, 70, 75);
-  stroke-linecap: round;
-  animation: dash 1.5s ease-in-out infinite;
-}
 
 @keyframes rotate {
   100% {
