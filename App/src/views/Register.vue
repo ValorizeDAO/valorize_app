@@ -69,7 +69,7 @@
             type="password"
             name="password2"
             class="p-2 w-full border-0 border-b-2 border-black bg-purple-50"
-            id="password"
+            id="password-2"
             v-model="passwordVerify"
           />
           <br />
@@ -153,7 +153,7 @@ export default defineComponent({
 
     async function sendLogin() {
       status.value = requestStatuses[1];
-      const formdata = new FormData();
+      const formdata: FormData = new FormData();
       formdata.append("username", username.value);
       formdata.append("password", password.value);
       formdata.append("email", email.value);
@@ -173,7 +173,7 @@ export default defineComponent({
         const result = (await response.json() as User | { error: string })
         console.log({ result })
         store.commit("authUser/setUser", result);
-        router.push({ path: "/edit-profile" });
+        await router.push({ path: "/edit-profile" });
       } else {
         status.value = requestStatuses[3];
       }

@@ -1,15 +1,16 @@
 import { onMounted, ref } from "vue"
 import { useStore } from "vuex"
 import backendImageFilePathService from "../services/backendImageService"
-import {emptyUser} from "../models/User";
+import { User, emptyUser } from "../models/User"
+import {Token} from "../models/Token";
 
 export default function composeUserInfo(username: string) {
   const store = useStore()
   const userStatuses = ["INIT", "LOADING", "SUCCESS", "FAIL"]
-  const userStatus = ref(userStatuses[0])
-  const userInfo = ref(emptyUser)
-  const tokenInfo = ref([])
-  const showImage = ref(false)
+  const userStatus = ref<string>(userStatuses[0])
+  const userInfo = ref<User>(emptyUser)
+  const tokenInfo = ref<Token>(<Token>{})
+  const showImage = ref<boolean>(false)
 
   onMounted(() => {
     store.dispatch("authUser/checkAuth")

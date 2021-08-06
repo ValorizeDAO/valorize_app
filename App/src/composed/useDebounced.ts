@@ -5,13 +5,16 @@ export default function (timeoutCount = 800, fn = (args: Ref<string>) => args) {
   const displayValue = ref("");
   const debouncedValue = ref("");
 
-  const debounceListener = (e: { target: { value: string } }) => {
+  const debounceListener = (e: InputEvent) => {
     if (timeoutRef !== null) {
       clearTimeout(timeoutRef);
     }
-    displayValue.value = e.target.value;
+
+    // @ts-ignore
+    const { value }: string = e.target
+    displayValue.value = value;
     timeoutRef = setTimeout(() => {
-      debouncedValue.value = e.target.value;
+      debouncedValue.value = value;
       fn(debouncedValue);
     }, timeoutCount);
   };

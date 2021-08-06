@@ -2,10 +2,10 @@ import { computed, onMounted, ref } from "vue"
 
 export default function composeTokenInfo(username: string) {
   const userStatuses = ["INIT", "LOADING", "SUCCESS", "FAIL"]
-  const userStatus = ref(userStatuses[0])
-  const tokenCap = ref(0)
-  const tokenEthBalance = ref(0)
-  const ethPrice = ref(0.0)
+  const userStatus = ref<string>(userStatuses[0])
+  const tokenCap = ref<number>(0)
+  const tokenEthBalance = ref<number>(0)
+  const ethPrice = ref<number>(0.0)
   const tokenPrice = computed(() => {
     return (ethPrice.value * tokenEthBalance.value) / (tokenCap.value === 0 ? 1 : tokenCap.value)
   })

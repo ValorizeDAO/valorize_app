@@ -15,26 +15,26 @@ import Ethereum from "../types/Ethereum"
 export default defineComponent({
   name: "MetamaskLogin",
   setup: () => {
-    const count = ref(0);
-    const error = ref(false);
-    const errorText = ref("");
+    const count = ref(0)
+    const error = ref(false)
+    const errorText = ref("")
     async function metamaskAuthenticate(): Promise<void> {
-      const ethereum: Ethereum = (window as any).ethereum;
+      const ethereum: Ethereum = (window as any).ethereum
       if (ethereum) {
         console.log("metamask detected");
         setTimeout(() => {
           error.value = true;
           errorText.value = "Use the metamask extension to sign in"
         }, 10000)
-        const accounts = await ethereum.request({ method: "eth_requestAccounts" })
-        console.log("metamask accepted", accounts[0]);
+        //const accounts = await ethereum.request({ method: "eth_requestAccounts" })
+        //console.log("metamask accepted", accounts[0]);
       } else {
-        console.log("metamask not detected");
+        //console.log("metamask not detected");
         error.value = true;
         errorText.value = "Download <a href='https://metamask.io/' target='_blank' class='underline'>metamask</a> to authenticate"
       }
     }
-    return { count, error, errorText, metamaskAuthenticate };
+    return { count, error, errorText, metamaskAuthenticate }
   },
 });
 </script>

@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { Token } from "./Token"
 export interface User {
   id: number,

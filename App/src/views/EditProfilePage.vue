@@ -112,8 +112,8 @@
       "
     >
       <h2 class="text-3xl font-black mb-6">Your Token</h2>
-<!--      <TokenInfoComponent v-if="hasToken" :username="user.username" />-->
-<!--      <div v-else>-->
+      <TokenInfoComponent v-if="hasToken" :username="user.username" />
+      <div v-else>
       <h3 class="text-2xl font-black">{{ user.username }}'s Token</h3>
       ( not yet deployed )
       <label>
@@ -146,8 +146,10 @@
       </div>
       <div
         @click.stop="openModal"
+        id="modal-bg"
         v-if="modalIsOpen"
         class="
+          mt-20
           h-screen
           w-screen
           absolute
@@ -235,7 +237,7 @@
             </transition>
           </div>
         </div>
-<!--      </div>-->
+      </div>
     </div>
   </div>
 </template>
