@@ -24,7 +24,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{os.Getenv("FRONTEND_URL")},
+		AllowOrigins:     []string{os.Getenv("ALLOW_ORIGIN")},
 		AllowMethods:     []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 		AllowCredentials: true,
 	}))
@@ -55,7 +55,6 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
 	r.POST("/deploy", eth.DeployCreatorToken)
-
 
 	userGroup := api.Group("/users")
 	userGroup.GET("/:username", user.Show)
