@@ -18,6 +18,7 @@
         soon!
       </p>
     </div>
+
   </div>
 </template>
 
@@ -33,7 +34,7 @@ export default defineComponent({
   setup() {
     const { username } = useRoute().params
     return {
-      ...composeUserInfo(username[0]),
+      ...composeUserInfo(username),
       username
     }
   }

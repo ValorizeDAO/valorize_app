@@ -25,6 +25,7 @@ export default function composeUserInfo(username: string) {
       .then((result) => {
         userInfo.value = result
         userInfo.value.avatar = backendImageFilePathService(result.avatar)
+        console.log(userInfo)
         tokenInfo.value = result.token
       })
       .catch((error) => console.log(error))
