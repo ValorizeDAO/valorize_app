@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { ref, defineComponent, onMounted, computed } from "vue";
+import { defineComponent } from "vue";
 import { useRoute } from 'vue-router';
 import {useStore} from "vuex";
 import composeUserInfo from "../composed/userInfo"

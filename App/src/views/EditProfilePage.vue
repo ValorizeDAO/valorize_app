@@ -112,8 +112,8 @@
       "
     >
       <h2 class="text-3xl font-black mb-6">Your Token</h2>
-      <TokenInfoComponent v-if="hasToken" :username="user.username" />
-      <div v-else>
+<!--      <TokenInfoComponent v-if="hasToken" :username="user.username" />-->
+      <div >
       <h3 class="text-2xl font-black">{{ user.username }}'s Token</h3>
       ( not yet deployed )
       <label>
@@ -228,8 +228,8 @@
                   >
                     Confirm details
                   </a>
-                <p>(Might take a minute to Deploy)</p>
                 </p>
+                <p>(Might take a minute to Deploy)</p>
                 <a :href="checkoutLink">
                   <div class="btn w-1/2 mx-auto bg-purple-100 mt-12">Deploy on Ethereum for $10</div>
                 </a>
@@ -243,6 +243,7 @@
 </template>
 
 <script lang="ts">
+import { arrayBufferToBlob } from "blob-util"
 import { ref, defineComponent, computed } from "vue";
 import auth from "../services/authentication";
 import { User } from "../models/user";
@@ -301,34 +302,33 @@ function composeProfileInfo() {
 }
 function composeUpdateImage() {
   const store = useStore();
-  const pictureFormUpload = ref(null);
+  const pictureFormUpload = ref(HTMLInputElement);
   const profileImage = ref(store.state.authUser.user.avatar);
   const pictureStatuses = ["INIT", "PREVIEW", "UPLOADING", "ERROR"];
-  const pictureStatus = ref(pictureStatuses[0]);
+  const pictureStatus = ref<string>(pictureStatuses[0]);
+  const imageToUpload = ref<File>(new File([], ""))
   function changeProfile() {
     (pictureFormUpload.value as unknown as HTMLInputElement).click();
   }
-  function changePic(e) {
-    var files = e.target.files || e.dataTransfer.files;
+  function changePic(e: Event) {
+    const files = e.target.files || e.dataTransfer.files;
     pictureStatus.value = pictureStatuses[1];
 
     if (!files.length) {
       return;
     }
-    var reader = new FileReader();
-
-    reader.onload = (e: Event) => {
-      profileImage.value = e?.target?.result;
-    };
-    reader.readAsDataURL(
-      (pictureFormUpload.value as unknown as HTMLInputElement).files[0]
-    );
+    let filename = files[0].name
+    const fileReader = new FileReader()
+    fileReader.addEventListener('load', (e) => {
+      profileImage.value = URL.createObjectURL(files[0])
+      imageToUpload.value = files[0]
+    })
+    fileReader.readAsArrayBuffer(files[0])
   }
+
   async function sendPhoto() {
     pictureStatus.value = pictureStatuses[2];
-    const uploadRequest = await auth.uploadPicture(
-      (pictureFormUpload.value as unknown as HTMLInputElement).files[0]
-    );
+    const uploadRequest = await auth.uploadPicture(imageToUpload.value)
     if (uploadRequest.status == 200) {
       pictureStatus.value = pictureStatuses[0];
       const responseJson = await ((await uploadRequest.json()) as Promise<{
@@ -345,9 +345,6 @@ function composeUpdateImage() {
   function resetPhoto() {
     pictureStatus.value = pictureStatuses[0];
     profileImage.value = store.state.authUser.user.avatar;
-    (pictureFormUpload.value as unknown as HTMLInputElement).outerHTML = (
-      pictureFormUpload.value as unknown as HTMLInputElement
-    ).outerHTML;
   }
   return {
     pictureFormUpload,
