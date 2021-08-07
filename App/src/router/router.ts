@@ -43,7 +43,10 @@ router.beforeEach(async (to, from, next) => {
   const publicRoutes = ["Login", "Register", "Show Profile"]
   let { name } = to
   name = name?.toString() || ""
-  console.log(name)
+  const title = document.querySelector("head > title")
+  if (title) {
+    title.innerHTML = name + " | Valorize"
+  }
   const isAuthenticated = store.state.authenticated
   if (!publicRoutes.includes(name) && !isAuthenticated) {
     store.state.checkingAuth = true

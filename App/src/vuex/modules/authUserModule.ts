@@ -37,9 +37,6 @@ export default {
       state.checkingAuth = false
       state.user = payload
       state.user.avatar = backendImageFilePathService(state.user.avatar)
-      if (payload.has_deployed_token) {
-        state.hasToken = true
-      }
     },
     setUserPicture(state: UserState, payload: string) {
       state.user.avatar = backendImageFilePathService(payload)

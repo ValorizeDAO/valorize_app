@@ -6,7 +6,7 @@ export default function useDebounced(timeoutCount = 800, fn = (args: any) => arg
   const debouncedValue = ref("")
 
   const debounceListener = (e: Event) => {
-    if (timeoutRef !== null) {
+    if (timeoutRef) {
       clearTimeout(timeoutRef)
     }
 

@@ -21,15 +21,12 @@ export default defineComponent({
     async function metamaskAuthenticate(): Promise<void> {
       const ethereum: Ethereum = (window as any).ethereum
       if (ethereum) {
-        console.log("metamask detected");
         setTimeout(() => {
           error.value = true;
           errorText.value = "Use the metamask extension to sign in"
         }, 10000)
         //const accounts = await ethereum.request({ method: "eth_requestAccounts" })
-        //console.log("metamask accepted", accounts[0]);
       } else {
-        //console.log("metamask not detected");
         error.value = true;
         errorText.value = "Download <a href='https://metamask.io/' target='_blank' class='underline'>metamask</a> to authenticate"
       }

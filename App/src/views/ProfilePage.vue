@@ -24,7 +24,6 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { useRoute } from 'vue-router';
-import {useStore} from "vuex";
 import composeUserInfo from "../composed/userInfo"
 import ImageContainer from "../components/ImageContainer.vue";
 import TokenInfoComponent from "../components/TokenInfoComponent.vue"

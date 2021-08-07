@@ -112,8 +112,8 @@
       "
     >
       <h2 class="text-3xl font-black mb-6">Your Token</h2>
-<!--      <TokenInfoComponent v-if="hasToken" :username="user.username" />-->
-      <div >
+      <TokenInfoComponent v-if="user.has_deployed_token" :username="user.username" />
+      <div v-else>
       <h3 class="text-2xl font-black">{{ user.username }}'s Token</h3>
       ( not yet deployed )
       <label>
@@ -243,7 +243,6 @@
 </template>
 
 <script lang="ts">
-import { arrayBufferToBlob } from "blob-util"
 import { ref, defineComponent, computed } from "vue";
 import auth from "../services/authentication";
 import { User } from "../models/user";
@@ -311,19 +310,20 @@ function composeUpdateImage() {
     (pictureFormUpload.value as unknown as HTMLInputElement).click();
   }
   function changePic(e: Event) {
-    const files = e.target.files || e.dataTransfer.files;
-    pictureStatus.value = pictureStatuses[1];
-
-    if (!files.length) {
-      return;
+    if (e.target) {
+      const inputElement = e.target as HTMLInputElement
+      const files = inputElement.files
+      pictureStatus.value = pictureStatuses[1];
+      if (!files) {
+        return
+      }
+      const fileReader = new FileReader()
+      fileReader.addEventListener('load', (e) => {
+        profileImage.value = URL.createObjectURL(files[0])
+        imageToUpload.value = files[0]
+      })
+      fileReader.readAsArrayBuffer(files[0])
     }
-    let filename = files[0].name
-    const fileReader = new FileReader()
-    fileReader.addEventListener('load', (e) => {
-      profileImage.value = URL.createObjectURL(files[0])
-      imageToUpload.value = files[0]
-    })
-    fileReader.readAsArrayBuffer(files[0])
   }
 
   async function sendPhoto() {
