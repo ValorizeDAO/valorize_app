@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,6 +11,8 @@ import (
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
 
+	"github.com/cloudinary/cloudinary-go"
+	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -158,6 +160,7 @@ func (auth *AuthHandler) ShowUser(c echo.Context) error {
 }
 
 func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
+	cld, _ := cloudinary.NewFromURL(os.Getenv("CLOUDINARY_URL"))
 	userData, err := services.AuthUser(c, *auth.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
@@ -177,9 +180,8 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
 	}
 	defer src.Close()
 
-	filename := strconv.FormatUint(uint64(userData.ID), 10) + "_avatar.jpg"
-	path := "dist/images/" + filename
-	dst, err := os.Create(path)
+	filename := strconv.FormatUint(uint64(userData.ID), 10) + "_avatar"
+	resp, err := cld.Upload.Upload(context.Background(), src, uploader.UploadParams{PublicID: filename})
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -187,16 +189,7 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
 		})
 	}
 
-	defer dst.Close()
-
-	_, err = io.Copy(dst, src)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Could not copy image to server",
-		})
-	}
-
-	userData.Avatar = filename
+	userData.Avatar = resp.SecureURL
 	if auth.server.DB.Save(&userData).Error != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "could not save user data",
@@ -204,7 +197,7 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{
-		"image": filename,
+		"image": resp.SecureURL,
 	})
 }
 
