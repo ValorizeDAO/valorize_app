@@ -94,6 +94,7 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		Email:    email,
 		Username: username,
 		Password: string(hash),
+		Avatar:   "https://res.cloudinary.com/valorize/image/upload/v1628386107/default_avatar.png",
 	}
 
 	if auth.server.DB.Create(&user).Error != nil {
