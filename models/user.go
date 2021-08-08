@@ -23,18 +23,19 @@ type UserProfile struct {
 	Username         string `json:"username"`
 	Avatar           string `json:"avatar"`
 	About            string `json:"about"`
-	HasDeployedToken bool   `json:"has_deployed_token"`
-	HasVerifiedEmail bool   `json:"has_verified_email"`
+	HasDeployedToken bool   `json:"hasDeployedToken"`
+	HasVerifiedEmail bool   `json:"hasVerifiedEmail"`
 	Token            Token  `json:"token"`
 }
 
 type UserPublicProfile struct {
-	ID       uint   `json:"id"`
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Avatar   string `json:"avatar"`
-	About    string `json:"about"`
-	Token    Token  `json:"token"`
+	ID               uint   `json:"id"`
+	Name             string `json:"name"`
+	Username         string `json:"username"`
+	Avatar           string `json:"avatar"`
+	About            string `json:"about"`
+	HasDeployedToken bool   `json:"hasDeployedToken""`
+	Token            Token  `json:"token"`
 }
 
 func GetUserProfile(user *User) UserProfile {
@@ -58,6 +59,7 @@ func GetUserPublicProfile(user *User) UserPublicProfile {
 		user.Username,
 		user.Avatar,
 		user.About,
+		user.HasDeployedToken,
 		user.Token,
 	}
 }
