@@ -88,9 +88,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	fmt.Printf("Launching contract %v(%v)\n\n", name, ticker)
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
 	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
-	fmt.Println(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
-	fmt.Println("Key Decrypted")
 
 	_check(err)
 	gasPrice, err := GetGasPrice()
@@ -109,7 +107,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 }
 
 func GetGasPrice() (int64, error) {
-	url := "https://ropsten.infura.io/v3/9fe1c768748943aabc2cfdef6158ee9c"
+	url := os.Getenv("MAINNET_NODE")
 	method := "POST"
 
 	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":1}`)
