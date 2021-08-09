@@ -57,6 +57,7 @@ func NewKeystore(password string) (accounts.Account, error) {
 }
 func _check(e error) {
 	if e != nil {
+		fmt.Println("Error", e.Error())
 		panic(e)
 	}
 }
