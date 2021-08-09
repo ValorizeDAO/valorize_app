@@ -84,13 +84,11 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 }
 
 func LaunchContract(client *ethclient.Client, name string, ticker string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
-	hotWalletAddress := os.Getenv("HOTWALLET")
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
-	hotWalletBlob, err := ioutil.ReadFile("./wallets/hot/" + hotWalletAddress)
+	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
 
 	_check(err)
-
 	gasPrice, err := GetGasPrice()
 	_check(err)
 	auth, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
