@@ -57,6 +57,7 @@ func NewKeystore(password string) (accounts.Account, error) {
 }
 func _check(e error) {
 	if e != nil {
+		fmt.Println("Error", e.Error())
 		panic(e)
 	}
 }
@@ -84,13 +85,12 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 }
 
 func LaunchContract(client *ethclient.Client, name string, ticker string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
-	hotWalletAddress := os.Getenv("HOTWALLET")
+	fmt.Printf("Launching contract %v(%v)\n\n", name, ticker)
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
-	hotWalletBlob, err := ioutil.ReadFile("./wallets/hot/" + hotWalletAddress)
+	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
 
 	_check(err)
-
 	gasPrice, err := GetGasPrice()
 	_check(err)
 	auth, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
@@ -107,7 +107,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 }
 
 func GetGasPrice() (int64, error) {
-	url := "https://ropsten.infura.io/v3/9fe1c768748943aabc2cfdef6158ee9c"
+	url := os.Getenv("MAINNET_NODE")
 	method := "POST"
 
 	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":1}`)
