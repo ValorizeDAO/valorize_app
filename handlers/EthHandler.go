@@ -54,7 +54,13 @@ func (eth *EthHandler) CreateWalletFromRequest(c echo.Context) error {
 func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 	tokenName := c.FormValue("tokenName")
 	tokenTicker := c.FormValue("tokenTicker")
-	addr, tx, _, err := ethereum.LaunchContract(eth.server.BlockChain, tokenName, tokenTicker)
+	client, err := ethereum.Connect()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	addr, tx, _, err := ethereum.LaunchContract(client, tokenName, tokenTicker)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
