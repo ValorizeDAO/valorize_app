@@ -87,6 +87,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
 	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
+	fmt.Println("Key Decrypted " + hotWallet.Address.String())
 
 	_check(err)
 	gasPrice, err := GetGasPrice()
