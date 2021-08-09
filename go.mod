@@ -8,6 +8,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ethereum/go-ethereum v1.10.5
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/heroku/x v0.0.31 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.3.0
 	github.com/labstack/echo/v4 v4.3.0
