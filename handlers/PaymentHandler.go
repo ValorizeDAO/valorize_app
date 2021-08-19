@@ -28,7 +28,6 @@ func NewPaymentHandler(s *Server) *PaymentHandler {
 }
 
 func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
-	stripe.Key = os.Getenv("STRIPE_KEY")
 	user, _ := services.AuthUser(c, *payment.Server.DB)
 	tokenName := c.FormValue("tokenName")
 	tokenSymbol := c.FormValue("tokenSymbol")
@@ -91,7 +90,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 	}
 
 	// Pass the request body and Stripe-Signature header to ConstructEvent, along with the webhook signing key
-	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
+	endpointSecret := "whsec_rJO3g8YgfWas3uDM4axkZ1Dj1bC2xwnU"
 	event, err := webhook.ConstructEvent(body, c.Request().Header.Get("Stripe-Signature"), endpointSecret)
 
 	if err != nil {
