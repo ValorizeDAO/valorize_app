@@ -35,8 +35,8 @@ func AuthUser(c echo.Context, DB gorm.DB) (models.User, error) {
 	if err != nil {
 		return models.User{}, errors.New("error getting user")
 	}
-	user, err := models.GetUserByUsername(token.Claims.(*TokenClaims).Username, DB)
-	if err != nil {
+	user := models.User{}
+	if DB.First(&user, "username = ?", token.Claims.(*TokenClaims).Username).Error != nil {
 		return models.User{}, errors.New("could not find user in database")
 	}
 	return user, nil
@@ -68,6 +68,6 @@ func CreateTokenCookie(token string) *http.Cookie {
 
 func GetUserWallets(user *models.User, db gorm.DB) []models.Wallet {
 	var userWallets []models.Wallet
-	db.Where("user_id = ?", user.ID).Table("wallets").Find(&userWallets)
+	db.Where( "user_id = ?", user.ID).Table("wallets").Find(&userWallets)
 	return userWallets
 }
