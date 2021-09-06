@@ -3,12 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/labstack/echo/v4"
-	"github.com/stripe/stripe-go/v72"
-	"github.com/stripe/stripe-go/v72/checkout/session"
-	"github.com/stripe/stripe-go/v72/webhook"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,6 +11,13 @@ import (
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/labstack/echo/v4"
+	"github.com/stripe/stripe-go/v72"
+	"github.com/stripe/stripe-go/v72/checkout/session"
+	"github.com/stripe/stripe-go/v72/webhook"
 )
 
 type PaymentHandler struct {
@@ -126,7 +127,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 
 		creatorToken := models.Token{
 			UserId:          user.ID,
-			ContractVersion: "v0.0.1",
+			ContractVersion: "v0.0.3",
 			Name:            session.Metadata["name"],
 			Symbol:          session.Metadata["symbol"],
 			Network:         "MAINNET",
