@@ -4,13 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -20,6 +13,14 @@ import (
 	"strings"
 	"valorize-app/contracts"
 	"valorize-app/models"
+
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jinzhu/gorm"
 )
 
 func Connect() (*ethclient.Client, error) {
@@ -95,10 +96,12 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	_check(err)
 	auth, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
 	auth.Value = big.NewInt(0)      // in wei
-	auth.GasLimit = uint64(4000000) // in units
+	auth.GasLimit = uint64(8000000) // in units
 	auth.GasPrice = big.NewInt(gasPrice)
 	fmt.Printf("Gas Price: %v", gasPrice)
-	address, tx, instance, err := contracts.DeployCreatorToken(auth, client, big.NewInt(1000), name, ticker)
+	n := new(big.Int)
+	initialAmount, _ := n.SetString("1000000000000000000000", 10)
+	address, tx, instance, err := contracts.DeployCreatorToken(auth, client, initialAmount, big.NewInt(800000), name, ticker)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err.Error())
 		return common.HexToAddress("0x0"), nil, nil, err

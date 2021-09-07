@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/labstack/echo/v4"
 	"math/big"
 	"net/http"
-	"strconv"
 	"valorize-app/contracts"
 	"valorize-app/models"
 	"valorize-app/services/ethereum"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/labstack/echo/v4"
 )
 
 type TokenHandler struct {
@@ -41,7 +41,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 
 	ownerTokenBalance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(user.Token.OwnerAddress))
-	totalMinted, err := instance.TotalMinted(&bind.CallOpts{})
+	totalMinted, err := instance.TotalSupply(&bind.CallOpts{})
 	etherStaked, err := instance.GetEthBalance(&bind.CallOpts{})
 
 	return c.JSON(http.StatusOK, map[string]string{
@@ -54,7 +54,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 
 func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	username := c.Param("username")
-	etherToCheck, err := strconv.Atoi(c.FormValue("etherToCheck"))
+	etherToCheck := c.FormValue("etherToCheck")
 	user, err := models.GetUserByUsername(username, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
@@ -70,10 +70,12 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 
 	client, err := ethereum.MainnetConnection()
 	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
-	toBuyer, toOwner, err := instance.GetCurrentStakeReturns(&bind.CallOpts{}, big.NewInt(int64(etherToCheck)))
+	n := new(big.Int)
+	ethToCheckBig, _ := n.SetString(etherToCheck, 10)
+	response, err := instance.CalculateTokenBuyReturns(&bind.CallOpts{}, ethToCheckBig)
 
-	return c.JSON(http.StatusOK, map[string]int64{
-		"toBuyer": toBuyer.Int64(),
-		"toOwner": toOwner.Int64(),
+	return c.JSON(http.StatusOK, map[string]*big.Int{
+		"toBuyer": response.AmountForSender,
+		"toOwner": response.AmountForOwner,
 	})
 }
