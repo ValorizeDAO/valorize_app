@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"context"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"os"
 	"strconv"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+
+	"github.com/labstack/echo/v4"
 )
 
 type EthHandler struct {
@@ -70,7 +71,7 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"user_id":          strconv.Itoa(int(user.ID)),
-		"contract_version": "v0.0.2",
+		"contract_version": "v0.1.1",
 		"name":             tokenName,
 		"symbol":           tokenTicker,
 		"network":          os.Getenv("ETH_TESTNET"),
