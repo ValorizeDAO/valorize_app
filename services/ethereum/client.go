@@ -33,6 +33,7 @@ func Connect() (*ethclient.Client, error) {
 	}
 	return client, err
 }
+
 func MainnetConnection() (*ethclient.Client, error) {
 	var clientUrl string
 	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
@@ -56,6 +57,7 @@ func NewKeystore(password string) (accounts.Account, error) {
 
 	return account, err
 }
+
 func _check(e error) {
 	if e != nil {
 		fmt.Println("Error", e.Error())

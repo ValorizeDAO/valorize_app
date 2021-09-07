@@ -72,10 +72,10 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	n := new(big.Int)
 	ethToCheckBig, _ := n.SetString(etherToCheck, 10)
-	response, err := instance.CalculateTokenBuyReturns(&bind.CallOpts{}, ethToCheckBig)
+	AmountForSender, AmountForOwner, err := instance.CalculateTokenBuyReturns(&bind.CallOpts{}, ethToCheckBig)
 
 	return c.JSON(http.StatusOK, map[string]*big.Int{
-		"toBuyer": response.AmountForSender,
-		"toOwner": response.AmountForOwner,
+		"toBuyer": AmountForSender,
+		"toOwner": AmountForOwner,
 	})
 }
