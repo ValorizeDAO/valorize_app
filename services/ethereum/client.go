@@ -98,7 +98,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	_check(err)
 	txOptions, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
 	txOptions.Value = big.NewInt(0)      // in wei
-	txOptions.GasLimit = uint64(8000001) // in units
+	txOptions.GasLimit = uint64(8000000) // in units
 	txOptions.GasPrice = big.NewInt(gasPrice)
 	fmt.Printf("Gas Price: %v", gasPrice)
 	n := new(big.Int)
