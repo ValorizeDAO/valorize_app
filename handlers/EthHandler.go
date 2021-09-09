@@ -71,7 +71,7 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"user_id":          strconv.Itoa(int(user.ID)),
-		"contract_version": "v0.1.1",
+		"contract_version": "v0.1.2",
 		"name":             tokenName,
 		"symbol":           tokenTicker,
 		"network":          os.Getenv("ETH_TESTNET"),
