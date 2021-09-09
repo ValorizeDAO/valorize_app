@@ -116,7 +116,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 
 		fmt.Printf(`
 ==============================================================================================
-    contracti by owner %v deployed to address %v
+    contract by owner %v deployed to address %v
 ==============================================================================================
 `, user.ID, addr.String())
 		if err != nil {
