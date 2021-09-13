@@ -74,8 +74,8 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	ethToCheckBig, _ := n.SetString(etherToCheck, 10)
 	AmountForSender, AmountForOwner, err := instance.CalculateTokenBuyReturns(&bind.CallOpts{}, ethToCheckBig)
 
-	return c.JSON(http.StatusOK, map[string]*big.Int{
-		"toBuyer": AmountForSender,
-		"toOwner": AmountForOwner,
+	return c.JSON(http.StatusOK, map[string]string{
+		"toBuyer": AmountForSender.String(),
+		"toOwner": AmountForOwner.String(),
 	})
 }
