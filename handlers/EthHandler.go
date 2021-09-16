@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
 
@@ -41,6 +43,29 @@ func (eth *EthHandler) CreateWalletFromRequest(c echo.Context) error {
 	}
 	user, _ := services.AuthUser(c, *eth.server.DB)
 	address, err := ethereum.StoreUserKeystore(password, user.ID, eth.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "ok",
+		"address": address,
+	})
+}
+
+func (eth *EthHandler) AddWalletToAccount(c echo.Context) error {
+	address := c.FormValue("address")
+	isValid := len(address) == 42 && strings.ToLower(address[:2]) == "0x"
+
+	if !isValid {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "request body must include valid 'address' parameter",
+		})
+	}
+
+	user, _ := services.AuthUser(c, *eth.server.DB)
+	err := models.AddExternalWalletForUser(&user, address, *eth.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),

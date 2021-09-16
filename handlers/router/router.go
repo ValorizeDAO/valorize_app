@@ -1,12 +1,13 @@
 package router
 
 import (
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"net/http"
 	"os"
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func NewRouter(s *handlers.Server) echo.Echo {
@@ -52,6 +53,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
+	r.POST("/wallet/new", eth.AddWalletToAccount)
 	r.POST("/deploy", eth.DeployCreatorToken)
 
 	userGroup := api.Group("/users")
