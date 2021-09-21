@@ -27,7 +27,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 	user, err := models.GetUserByUsername(username, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": "could not find token for " + user.Username,
+			"error": "could not find token for " + username,
 		})
 	}
 
