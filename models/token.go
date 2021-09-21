@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"github.com/jinzhu/gorm"
 )
 
 type Token struct {
@@ -42,4 +44,15 @@ func GetTokenResponse(creatorToken *Token) TokenResponse {
 		ContractVersion: creatorToken.ContractVersion,
 		UserId:          creatorToken.UserId,
 	}
+}
+
+func GetTokenById(tokenId uint64, db gorm.DB) (TokenResponse, error) {
+	var t Token
+	if err := db.Where("id=?", tokenId).First(&t).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return TokenResponse{}, err
+		}
+		return TokenResponse{}, err
+	}
+	return GetTokenResponse(&t), nil
 }

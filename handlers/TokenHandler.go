@@ -3,6 +3,7 @@ package handlers
 import (
 	"math/big"
 	"net/http"
+	"strconv"
 	"valorize-app/contracts"
 	"valorize-app/models"
 	"valorize-app/services/ethereum"
@@ -49,7 +50,6 @@ func (token *TokenHandler) Show(c echo.Context) error {
 		"total_minted":  totalMinted.String(),
 		"ether_staked":  etherStaked.String(),
 	})
-
 }
 
 func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
@@ -78,4 +78,29 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 		"toBuyer": AmountForSender.String(),
 		"toOwner": AmountForOwner.String(),
 	})
+}
+
+func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
+	username := c.FormValue("username")
+	if username == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "username parameters is required on request",
+		})
+	}
+
+	creatorTokenId, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "token id invalid",
+		})
+	}
+
+	tokenInfo, err := models.GetTokenById(creatorTokenId, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find token",
+		})
+	}
+
+	return  c.JSON(http.StatusOK, tokenInfo)
 }

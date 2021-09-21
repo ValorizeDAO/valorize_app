@@ -62,6 +62,9 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	userGroup.POST("/:username/token/stakingrewards", token.GetTokenStakingRewards)
 	userGroup.GET("/:username/wallets", wallet.Index)
 
+	tokenGroup := api.Group("/tokens")
+	tokenGroup.POST("/:id", token.GetBalanceForCoinForUser)
+
 	u := api.Group("/utils")
 	u.GET("/price", utils.ShowEthPrice)
 
