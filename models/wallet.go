@@ -17,3 +17,15 @@ func AddExternalWalletForUser(user *User, address string, db gorm.DB) error {
 	}
 	return db.Save(&wallet).Error
 }
+
+
+func GetAllWalletsByUserId(userId uint, db gorm.DB) ([]string, error) {
+	wallets := []Wallet{}
+	err := db.Select("address").Where("user_id = ?", userId).Find(&wallets).Error
+	//reduce Wallet arrays to only address
+	addresses := make([]string, len(wallets))
+	for i, wallet := range wallets {
+		addresses[i] = wallet.Address
+	}
+	return addresses, err
+}

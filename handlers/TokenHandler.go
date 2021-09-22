@@ -95,12 +95,31 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 		})
 	}
 
-	tokenInfo, err := models.GetTokenById(creatorTokenId, *token.server.DB)
+	user, err := models.GetUserByUsername(username, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find user with username " + username,
+		})
+	}
+	if !user.HasDeployedToken {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": user.Username + " has not deployed a token",
+		})
+	}
+
+	wallets, err := models.GetAllWalletsByUserId(user.ID, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find wallets for user with id " + strconv.FormatUint(uint64(user.ID), 10),
+		})
+	}
+
+	_, err = models.GetTokenById(creatorTokenId, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token",
 		})
 	}
 
-	return  c.JSON(http.StatusOK, tokenInfo)
+	return  c.JSON(http.StatusOK, wallets)
 }

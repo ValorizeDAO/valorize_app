@@ -34,7 +34,7 @@ type UserPublicProfile struct {
 	Username         string `json:"username"`
 	Avatar           string `json:"avatar"`
 	About            string `json:"about"`
-	HasDeployedToken bool   `json:"hasDeployedToken""`
+	HasDeployedToken bool   `json:"hasDeployedToken"`
 	Token            Token  `json:"token"`
 }
 
