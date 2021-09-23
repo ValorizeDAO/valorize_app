@@ -94,6 +94,12 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 			"error": "token id invalid",
 		})
 	}
+	creatorToken, err := models.GetTokenById(creatorTokenId, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find token",
+		})
+	}
 
 	user, err := models.GetUserByUsername(username, *token.server.DB)
 	if err != nil {
@@ -114,12 +120,21 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 		})
 	}
 
-	_, err = models.GetTokenById(creatorTokenId, *token.server.DB)
+	client, err := ethereum.MainnetConnection()
+	instance, err := contracts.NewCreatorToken(common.HexToAddress(creatorToken.Address), client)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token",
 		})
 	}
 
-	return  c.JSON(http.StatusOK, wallets)
+	totalBalance := new(big.Int)
+	for _, wallet := range wallets {
+		balance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(wallet))
+		if err == nil {
+			totalBalance.Add(totalBalance, balance)
+		}
+	}
+
+	return  c.JSON(http.StatusOK, totalBalance.String())
 }
