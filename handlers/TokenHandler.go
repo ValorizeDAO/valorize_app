@@ -23,6 +23,11 @@ func NewTokenHandler(s *Server) *TokenHandler {
 	}
 }
 
+type PublicTokenResponse struct {
+	Token *models.Token 	`json:"token"`
+	PriceData map[string]string `json:"price_data"`
+}
+
 func (token *TokenHandler) Show(c echo.Context) error {
 	username := c.Param("username")
 	user, err := models.GetUserByUsername(username, *token.server.DB)
@@ -45,10 +50,13 @@ func (token *TokenHandler) Show(c echo.Context) error {
 	totalMinted, err := instance.TotalSupply(&bind.CallOpts{})
 	etherStaked, err := instance.GetEthBalance(&bind.CallOpts{})
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"owner_balance": ownerTokenBalance.String(),
-		"total_minted":  totalMinted.String(),
-		"ether_staked":  etherStaked.String(),
+	return c.JSON(http.StatusOK, PublicTokenResponse{
+		Token: &user.Token,
+		PriceData: map[string]string{
+			"owner_balance": ownerTokenBalance.String(),
+			"total_minted":  totalMinted.String(),
+			"ether_staked":  etherStaked.String(),
+		},
 	})
 }
 
