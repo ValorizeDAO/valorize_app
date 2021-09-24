@@ -52,6 +52,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 	})
 }
 
+
 func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	username := c.Param("username")
 	etherToCheck := c.FormValue("etherToCheck")
@@ -80,11 +81,22 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	})
 }
 
+
+type TokenBalanceResponse struct {
+	TotalBalance *big.Int `json:"total_balance"`
+	Wallets []WalletBalance `json:"wallets"`
+}
+
+type WalletBalance struct {
+	Address string `json:"address"`
+	Balance *big.Int `json:"balance"`
+}
+
 func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 	username := c.FormValue("username")
 	if username == "" {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "username parameters is required on request",
+			"error": "username parameter is required on request",
 		})
 	}
 
@@ -128,13 +140,23 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 		})
 	}
 
+	var WalletBalances []WalletBalance;
 	totalBalance := new(big.Int)
 	for _, wallet := range wallets {
 		balance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(wallet))
-		if err == nil {
+		if err != nil {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": "error getting balance from contract for address " + wallet,
+			})
+		}
+		if balance.Cmp(big.NewInt(0)) > 0 {
+			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance,})
 			totalBalance.Add(totalBalance, balance)
 		}
 	}
 
-	return  c.JSON(http.StatusOK, totalBalance.String())
+	return c.JSON(http.StatusOK, TokenBalanceResponse{
+		TotalBalance: totalBalance,
+		Wallets: WalletBalances,
+	})
 }
