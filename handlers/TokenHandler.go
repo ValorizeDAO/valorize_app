@@ -91,13 +91,13 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 
 
 type TokenBalanceResponse struct {
-	TotalBalance *big.Int `json:"total_balance"`
+	TotalBalance string `json:"total_balance"`
 	Wallets []WalletBalance `json:"wallets"`
 }
 
 type WalletBalance struct {
 	Address string `json:"address"`
-	Balance *big.Int `json:"balance"`
+	Balance string `json:"balance"`
 }
 
 func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
@@ -158,13 +158,13 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 			})
 		}
 		if balance.Cmp(big.NewInt(0)) > 0 {
-			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance,})
+			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance.String(),})
 			totalBalance.Add(totalBalance, balance)
 		}
 	}
 
 	return c.JSON(http.StatusOK, TokenBalanceResponse{
-		TotalBalance: totalBalance,
+		TotalBalance: totalBalance.String(),
 		Wallets: WalletBalances,
 	})
 }
