@@ -23,6 +23,11 @@ func NewTokenHandler(s *Server) *TokenHandler {
 	}
 }
 
+type PublicTokenResponse struct {
+	Token *models.Token 	`json:"token"`
+	PriceData map[string]string `json:"price_data"`
+}
+
 func (token *TokenHandler) Show(c echo.Context) error {
 	username := c.Param("username")
 	user, err := models.GetUserByUsername(username, *token.server.DB)
@@ -45,10 +50,13 @@ func (token *TokenHandler) Show(c echo.Context) error {
 	totalMinted, err := instance.TotalSupply(&bind.CallOpts{})
 	etherStaked, err := instance.GetEthBalance(&bind.CallOpts{})
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"owner_balance": ownerTokenBalance.String(),
-		"total_minted":  totalMinted.String(),
-		"ether_staked":  etherStaked.String(),
+	return c.JSON(http.StatusOK, PublicTokenResponse{
+		Token: &user.Token,
+		PriceData: map[string]string{
+			"owner_balance": ownerTokenBalance.String(),
+			"total_minted":  totalMinted.String(),
+			"ether_staked":  etherStaked.String(),
+		},
 	})
 }
 
@@ -83,13 +91,13 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 
 
 type TokenBalanceResponse struct {
-	TotalBalance *big.Int `json:"total_balance"`
+	TotalBalance string `json:"total_balance"`
 	Wallets []WalletBalance `json:"wallets"`
 }
 
 type WalletBalance struct {
 	Address string `json:"address"`
-	Balance *big.Int `json:"balance"`
+	Balance string `json:"balance"`
 }
 
 func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
@@ -150,13 +158,13 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 			})
 		}
 		if balance.Cmp(big.NewInt(0)) > 0 {
-			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance,})
+			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance.String(),})
 			totalBalance.Add(totalBalance, balance)
 		}
 	}
 
 	return c.JSON(http.StatusOK, TokenBalanceResponse{
-		TotalBalance: totalBalance,
+		TotalBalance: totalBalance.String(),
 		Wallets: WalletBalances,
 	})
 }
