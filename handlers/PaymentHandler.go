@@ -127,7 +127,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 
 		creatorToken := models.Token{
 			UserId:          user.ID,
-			ContractVersion: "v0.1.2",
+			ContractVersion: "v0.1.3",
 			Name:            session.Metadata["name"],
 			Symbol:          session.Metadata["symbol"],
 			Network:         "MAINNET",
