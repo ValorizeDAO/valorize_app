@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -48,7 +50,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 
 	ownerTokenBalance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(user.Token.OwnerAddress))
 	totalMinted, err := instance.TotalSupply(&bind.CallOpts{})
-	etherStaked, err := instance.GetEthBalance(&bind.CallOpts{})
+	etherStaked, err :=  client.BalanceAt(context.Background(), common.HexToAddress(user.Token.Address), nil)
 
 	return c.JSON(http.StatusOK, PublicTokenResponse{
 		Token: &user.Token,
@@ -63,7 +65,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 
 func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	username := c.Param("username")
-	etherToCheck := c.FormValue("etherToCheck")
+	etherToCheck := c.FormValue("tokenToCheck")
 	user, err := models.GetUserByUsername(username, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
@@ -78,10 +80,12 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	}
 
 	client, err := ethereum.MainnetConnection()
-	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	tokenInstance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	n := new(big.Int)
 	ethToCheckBig, _ := n.SetString(etherToCheck, 10)
-	AmountForSender, AmountForOwner, err := instance.CalculateTokenBuyReturns(&bind.CallOpts{}, ethToCheckBig)
+	fmt.Println("CHECKING " + user.Token.Address + "\n\n\n")
+	AmountForSender, AmountForOwner, err := tokenInstance.CalculateTokenBuyReturns(&bind.CallOpts{}, ethToCheckBig)
+	fmt.Println("\n\n\nCHECKED")
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"toBuyer": AmountForSender.String(),
@@ -89,15 +93,42 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	})
 }
 
+func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
+	username := c.Param("username")
+	tokensToCheck := c.FormValue("tokenToCheck")
+	user, err := models.GetUserByUsername(username, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find " + username,
+		})
+	}
+
+	if !user.HasDeployedToken {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": user.Username + " has not deployed a token",
+		})
+	}
+
+	client, err := ethereum.MainnetConnection()
+	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	n := new(big.Int)
+	tokensToCheckBig, _ := n.SetString(tokensToCheck, 10)
+	saleReturnAmount, err := instance.CalculateTotalSaleReturn(&bind.CallOpts{}, tokensToCheckBig)
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"total_eth": saleReturnAmount.String(),
+	})
+}
+
 
 type TokenBalanceResponse struct {
-	TotalBalance *big.Int `json:"total_balance"`
+	TotalBalance string `json:"total_balance"`
 	Wallets []WalletBalance `json:"wallets"`
 }
 
 type WalletBalance struct {
 	Address string `json:"address"`
-	Balance *big.Int `json:"balance"`
+	Balance string `json:"balance"`
 }
 
 func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
@@ -158,13 +189,13 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 			})
 		}
 		if balance.Cmp(big.NewInt(0)) > 0 {
-			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance,})
+			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance.String(),})
 			totalBalance.Add(totalBalance, balance)
 		}
 	}
 
 	return c.JSON(http.StatusOK, TokenBalanceResponse{
-		TotalBalance: totalBalance,
+		TotalBalance: totalBalance.String(),
 		Wallets: WalletBalances,
 	})
 }
