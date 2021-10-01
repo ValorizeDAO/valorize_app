@@ -103,7 +103,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	fmt.Printf("Gas Price: %v", gasPrice)
 	n := new(big.Int)
 	initialAmount, _ := n.SetString("1000000000000000000000", 10)
-	address, tx, token, err := contracts.DeployCreatorToken(txOptions, client, initialAmount, big.NewInt(800000), name, ticker)
+	address, tx, token, err := contracts.DeployCreatorToken(txOptions, client, initialAmount, name, ticker)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err.Error())
 		return common.HexToAddress("0x0"), nil, nil, err
