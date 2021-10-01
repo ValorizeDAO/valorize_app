@@ -65,7 +65,12 @@ func (token *TokenHandler) Show(c echo.Context) error {
 
 func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	username := c.Param("username")
-	etherToCheck := c.FormValue("tokenToCheck")
+	etherToCheck := c.FormValue("etherToCheck")
+	if etherToCheck == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "etherToCheck param required",
+		})
+	}
 	user, err := models.GetUserByUsername(username, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
@@ -81,11 +86,14 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 
 	client, err := ethereum.MainnetConnection()
 	tokenInstance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
-	n := new(big.Int)
-	ethToCheckBig, _ := n.SetString(etherToCheck, 10)
-	fmt.Println("CHECKING " + user.Token.Address + "\n\n\n")
+	ethToCheckBig, ok := new(big.Int).SetString(etherToCheck, 10)
+
+	if !ok {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "could not parse ether to check",
+		})
+	}
 	AmountForSender, AmountForOwner, err := tokenInstance.CalculateTokenBuyReturns(&bind.CallOpts{}, ethToCheckBig)
-	fmt.Println("\n\n\nCHECKED")
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"toBuyer": AmountForSender.String(),
@@ -96,6 +104,12 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
 	username := c.Param("username")
 	tokensToCheck := c.FormValue("tokenToCheck")
+	fmt.Printf("tokensToCheck: %s", tokensToCheck)
+	if tokensToCheck == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "tokenToCheck param required",
+		})
+	}
 	user, err := models.GetUserByUsername(username, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
@@ -111,12 +125,21 @@ func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
 
 	client, err := ethereum.MainnetConnection()
 	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
-	n := new(big.Int)
-	tokensToCheckBig, _ := n.SetString(tokensToCheck, 10)
-	saleReturnAmount, err := instance.CalculateTotalSaleReturn(&bind.CallOpts{}, tokensToCheckBig)
-
+	tokenToCheckBig, ok := new(big.Int).SetString(tokensToCheck, 10)
+	fmt.Printf("tokensToCheckBig: %s", tokenToCheckBig)
+	if !ok {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "could not parse tokens to check",
+		})
+	}
+	saleReturnAmount, err := instance.CalculateTotalSaleReturn(&bind.CallOpts{}, tokenToCheckBig)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "could not calculate sale return: " + err.Error(),
+		})
+	}
 	return c.JSON(http.StatusOK, map[string]string{
-		"total_eth": saleReturnAmount.String(),
+		"total_eth": saleReturnAmount.Text(10),
 	})
 }
 
