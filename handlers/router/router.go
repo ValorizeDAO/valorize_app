@@ -60,6 +60,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	userGroup.GET("/:username", user.Show)
 	userGroup.GET("/:username/token", token.Show)
 	userGroup.POST("/:username/token/stakingrewards", token.GetTokenStakingRewards)
+	userGroup.POST("/:username/token/sellingrewards", token.GetTokenSellingRewards)
 	userGroup.GET("/:username/wallets", wallet.Index)
 
 	tokenGroup := api.Group("/tokens")

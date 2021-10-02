@@ -1,6 +1,10 @@
 package models
 
-import "github.com/jinzhu/gorm"
+import (
+	"errors"
+
+	"github.com/jinzhu/gorm"
+)
 
 type Wallet struct {
 	ID         uint   `gorm:"primary_key"`
@@ -11,11 +15,15 @@ type Wallet struct {
 }
 
 func AddExternalWalletForUser(user *User, address string, db gorm.DB) error {
-	wallet := Wallet {
-		Address: address,
-		User: *user,
+	wallet := Wallet{}
+	if db.Where("address = ? AND user_id = ?", address, user.ID).Find(&wallet).Error != nil {
+		wallet := Wallet {
+			Address: address,
+			User: *user,
+		}
+		return db.Save(&wallet).Error
 	}
-	return db.Save(&wallet).Error
+	return errors.New(user.Username + " already has a wallet with address " + address)
 }
 
 
