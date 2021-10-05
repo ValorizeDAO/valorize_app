@@ -53,7 +53,7 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 			},
 		},
 		ClientReferenceID: stripe.String(strconv.FormatUint(uint64(user.ID), 10)),
-		SuccessURL:        stripe.String(os.Getenv("FRONTEND_URL") + "/u/" + user.Username),
+		SuccessURL:        stripe.String(os.Getenv("FRONTEND_URL") + "/" + user.Username),
 		CancelURL:         stripe.String(os.Getenv("FRONTEND_URL") + "/edit-profile"),
 	}
 	params.AddMetadata("name", tokenName)
