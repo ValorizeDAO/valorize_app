@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+	"valorize-app/services/stringsUtil"
 
 	"github.com/cloudinary/cloudinary-go"
 	"github.com/cloudinary/cloudinary-go/api/uploader"
@@ -89,7 +91,31 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 	email := c.FormValue("email")
 	password := c.FormValue("password")
 	hash, _ := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if stringsUtil.StringInSlice(username, []string{
+		"admin",
+		"root", 
+		"register", 
+		"login", 
+		"edit-profile", 
+		"dashboard", 
+		"logout",
+	}) {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "sorry, username is reserved",
+		})
+	}
+	if username == "" || email == "" || password == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "username, email, and password are required",
+		})
+	}
 
+	invalidChars := "@#$%^&*()=+[]{}|;:'\",<.>/?`~"
+	if strings.ContainsAny(username, invalidChars) {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "username cannot contain any of: " + invalidChars,
+		})
+	}
 	user := models.User{
 		Email:    email,
 		Username: username,
