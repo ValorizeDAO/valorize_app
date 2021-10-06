@@ -110,6 +110,12 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 		})
 	}
 
+	if len(username) < 3 || len(username) > 20 {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "username must be between 3 and 20 characters",
+		})
+	}
+
 	invalidChars := "@#$%^&*()=+[]{}|;:'\",<.>/?`~"
 	if strings.ContainsAny(username, invalidChars) {
 		return c.JSON(http.StatusBadRequest, map[string]string{
