@@ -3,12 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/labstack/echo/v4"
-	"github.com/stripe/stripe-go/v72"
-	"github.com/stripe/stripe-go/v72/checkout/session"
-	"github.com/stripe/stripe-go/v72/webhook"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,6 +11,13 @@ import (
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/labstack/echo/v4"
+	"github.com/stripe/stripe-go/v72"
+	"github.com/stripe/stripe-go/v72/checkout/session"
+	"github.com/stripe/stripe-go/v72/webhook"
 )
 
 type PaymentHandler struct {
@@ -28,6 +29,7 @@ func NewPaymentHandler(s *Server) *PaymentHandler {
 }
 
 func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
+	stripe.Key = os.Getenv("STRIPE_KEY")
 	user, _ := services.AuthUser(c, *payment.Server.DB)
 	tokenName := c.FormValue("tokenName")
 	tokenSymbol := c.FormValue("tokenSymbol")
@@ -51,7 +53,7 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 			},
 		},
 		ClientReferenceID: stripe.String(strconv.FormatUint(uint64(user.ID), 10)),
-		SuccessURL:        stripe.String(os.Getenv("FRONTEND_URL") + "/u/" + user.Username),
+		SuccessURL:        stripe.String(os.Getenv("FRONTEND_URL") + "/" + user.Username),
 		CancelURL:         stripe.String(os.Getenv("FRONTEND_URL") + "/edit-profile"),
 	}
 	params.AddMetadata("name", tokenName)
@@ -90,7 +92,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 	}
 
 	// Pass the request body and Stripe-Signature header to ConstructEvent, along with the webhook signing key
-	endpointSecret := "whsec_rJO3g8YgfWas3uDM4axkZ1Dj1bC2xwnU"
+	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 	event, err := webhook.ConstructEvent(body, c.Request().Header.Get("Stripe-Signature"), endpointSecret)
 
 	if err != nil {
@@ -114,7 +116,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 
 		fmt.Printf(`
 ==============================================================================================
-    contracti by owner %v deployed to address %v
+    contract by owner %v deployed to address %v
 ==============================================================================================
 `, user.ID, addr.String())
 		if err != nil {
@@ -125,7 +127,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 
 		creatorToken := models.Token{
 			UserId:          user.ID,
-			ContractVersion: "v0.0.1",
+			ContractVersion: "v0.2.1",
 			Name:            session.Metadata["name"],
 			Symbol:          session.Metadata["symbol"],
 			Network:         "MAINNET",

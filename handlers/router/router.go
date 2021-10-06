@@ -1,17 +1,16 @@
 package router
 
 import (
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/stripe/stripe-go/v72"
 	"net/http"
 	"os"
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func NewRouter(s *handlers.Server) echo.Echo {
-	stripe.Key = os.Getenv("STRIPE_KEY")
 	e := *s.Echo
 	payment := handlers.NewPaymentHandler(s)
 	auth := handlers.NewAuthHandler(s)
@@ -54,12 +53,18 @@ func NewRouter(s *handlers.Server) echo.Echo {
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
+	r.POST("/wallet/new", eth.AddWalletToAccount)
 	r.POST("/deploy", eth.DeployCreatorToken)
 
 	userGroup := api.Group("/users")
 	userGroup.GET("/:username", user.Show)
 	userGroup.GET("/:username/token", token.Show)
+	userGroup.POST("/:username/token/stakingrewards", token.GetTokenStakingRewards)
+	userGroup.POST("/:username/token/sellingrewards", token.GetTokenSellingRewards)
 	userGroup.GET("/:username/wallets", wallet.Index)
+
+	tokenGroup := api.Group("/tokens")
+	tokenGroup.POST("/:id/balance", token.GetBalanceForCoinForUser)
 
 	u := api.Group("/utils")
 	u.GET("/price", utils.ShowEthPrice)

@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"context"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+
+	"github.com/labstack/echo/v4"
 )
 
 type EthHandler struct {
@@ -51,6 +54,29 @@ func (eth *EthHandler) CreateWalletFromRequest(c echo.Context) error {
 	})
 }
 
+func (eth *EthHandler) AddWalletToAccount(c echo.Context) error {
+	address := c.FormValue("address")
+	isValid := len(address) == 42 && strings.ToLower(address[:2]) == "0x"
+
+	if !isValid {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "request body must include valid 'address' parameter",
+		})
+	}
+
+	user, _ := services.AuthUser(c, *eth.server.DB)
+	err := models.AddExternalWalletForUser(&user, address, *eth.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]string{
+		"status":  "ok",
+		"address": address,
+	})
+}
+
 func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 	tokenName := c.FormValue("tokenName")
 	tokenTicker := c.FormValue("tokenTicker")
@@ -70,7 +96,7 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"user_id":          strconv.Itoa(int(user.ID)),
-		"contract_version": "v0.0.1",
+		"contract_version": "v0.1.2",
 		"name":             tokenName,
 		"symbol":           tokenTicker,
 		"network":          os.Getenv("ETH_TESTNET"),

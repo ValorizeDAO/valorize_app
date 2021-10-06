@@ -4,13 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -20,6 +13,14 @@ import (
 	"strings"
 	"valorize-app/contracts"
 	"valorize-app/models"
+
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jinzhu/gorm"
 )
 
 func Connect() (*ethclient.Client, error) {
@@ -32,6 +33,7 @@ func Connect() (*ethclient.Client, error) {
 	}
 	return client, err
 }
+
 func MainnetConnection() (*ethclient.Client, error) {
 	var clientUrl string
 	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
@@ -55,6 +57,7 @@ func NewKeystore(password string) (accounts.Account, error) {
 
 	return account, err
 }
+
 func _check(e error) {
 	if e != nil {
 		fmt.Println("Error", e.Error())
@@ -85,7 +88,7 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 }
 
 func LaunchContract(client *ethclient.Client, name string, ticker string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
-	fmt.Printf("Launching contract %v(%v)\n\n", name, ticker)
+	fmt.Printf("Launching contract %v (%v)\n\n", name, ticker)
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
 	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
@@ -93,17 +96,19 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	_check(err)
 	gasPrice, err := GetGasPrice()
 	_check(err)
-	auth, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
-	auth.Value = big.NewInt(0)      // in wei
-	auth.GasLimit = uint64(4000000) // in units
-	auth.GasPrice = big.NewInt(gasPrice)
+	txOptions, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
+	txOptions.Value = big.NewInt(0)      // in wei
+	txOptions.GasLimit = uint64(8000000) // in units
+	txOptions.GasPrice = big.NewInt(gasPrice)
 	fmt.Printf("Gas Price: %v", gasPrice)
-	address, tx, instance, err := contracts.DeployCreatorToken(auth, client, big.NewInt(1000), name, ticker)
+	n := new(big.Int)
+	initialAmount, _ := n.SetString("1000000000000000000000", 10)
+	address, tx, token, err := contracts.DeployCreatorToken(txOptions, client, initialAmount, name, ticker)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err.Error())
 		return common.HexToAddress("0x0"), nil, nil, err
 	}
-	return address, tx, instance, nil
+	return address, tx, token, nil
 }
 
 func GetGasPrice() (int64, error) {
@@ -139,7 +144,7 @@ func GetGasPrice() (int64, error) {
 	_check(err)
 	output, err := strconv.ParseInt(hexaNumberToInteger(gasPriceStruct.Result), 16, 64)
 	_check(err)
-	return output, nil
+	return output * 5, nil
 }
 
 func hexaNumberToInteger(hexaString string) string {
