@@ -2,9 +2,10 @@ package db
 
 import (
 	"fmt"
+	"valorize-app/config"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
-	"valorize-app/config"
 )
 
 func Init(cfg *config.Config) *gorm.DB {
@@ -22,9 +23,6 @@ func Init(cfg *config.Config) *gorm.DB {
 		panic(err.Error())
 	}
 	db.LogMode(true)
-
-	//userSeeder := seeders.NewUserSeeder(db)
-	//userSeeder.SetUsers()
 
 	return db
 }
