@@ -45,6 +45,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	e.POST("/payments/successhook", payment.OnPaymentAccepted)
 
 	api := e.Group("/api/v0")
+	api.GET("/get-gas-price", token.GetGasPriceToLaunchToken)
 
 	me := api.Group("/me", appmiddleware.AuthMiddleware)
 	me.GET("", auth.ShowUser)

@@ -87,22 +87,25 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 	return account.Address.Hex(), nil
 }
 
-func LaunchContract(client *ethclient.Client, name string, ticker string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
+func LaunchContract(client *ethclient.Client, name string, ticker string, network string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
 	fmt.Printf("Launching contract %v (%v)\n\n", name, ticker)
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
 	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
 
+	fmt.Print(network + "_ID", os.Getenv(network+"_ID"))
 	_check(err)
-	gasPrice, err := GetGasPrice()
+	gasPrice, err := GetGasPrice(network)
 	_check(err)
-	txOptions, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
+	CHAIN_ID, err := strconv.ParseInt(os.Getenv(network + "_ID"), 10, 64)
+	txOptions, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(CHAIN_ID))
 	txOptions.Value = big.NewInt(0)      // in wei
-	txOptions.GasLimit = uint64(8000000) // in units
+	txOptions.GasLimit = uint64(3000000) // in units
 	txOptions.GasPrice = big.NewInt(gasPrice)
 	fmt.Printf("Gas Price: %v", gasPrice)
 	n := new(big.Int)
 	initialAmount, _ := n.SetString("1000000000000000000000", 10)
+	
 	address, tx, token, err := contracts.DeployCreatorToken(txOptions, client, initialAmount, name, ticker)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err.Error())
@@ -111,14 +114,20 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	return address, tx, token, nil
 }
 
-func GetGasPrice() (int64, error) {
-	url := os.Getenv("MAINNET_NODE")
-	method := "POST"
+func GetGasPrice(network string) (int64, error) {
+	var url string
+	if network == "MAINNET" {
+		url = os.Getenv("MAINNET_NODE")
+	} else if network == "TESTNET" {
+		url = os.Getenv("TESTNET_NODE")
+	} else {
+		return 0, errors.New("invalid network")
+	}
 
-	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":1}`)
+	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":` + os.Getenv(network+"_ID") +`}`)
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, payload)
+	req, err := http.NewRequest("POST", url, payload)
 
 	if err != nil {
 		fmt.Println(err)
