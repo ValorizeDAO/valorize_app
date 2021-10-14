@@ -71,7 +71,7 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 func (payment *PaymentHandler) _fulfillOrder(session stripe.CheckoutSession) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
 	client, err := ethereum.MainnetConnection()
 
-	addr, tx, instance, err := ethereum.LaunchContract(client, session.Metadata["name"], session.Metadata["symbol"])
+	addr, tx, instance, err := ethereum.LaunchContract(client, session.Metadata["name"], session.Metadata["symbol"], "MAINNET")
 
 	if err != nil {
 		fmt.Println("error: " + err.Error())
@@ -127,7 +127,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 
 		creatorToken := models.Token{
 			UserId:          user.ID,
-			ContractVersion: "v0.2.1",
+			ContractVersion: "v0.2.2",
 			Name:            session.Metadata["name"],
 			Symbol:          session.Metadata["symbol"],
 			Network:         "MAINNET",

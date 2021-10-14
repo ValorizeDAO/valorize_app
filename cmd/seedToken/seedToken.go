@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"valorize-app/config"
 	"valorize-app/db"
 	"valorize-app/models"
@@ -14,21 +16,26 @@ func main() {
 	cfg := config.NewConfig()
 	database := db.Init(cfg)
 	defer database.Close()
-	tkn, err := NewToken(database)
+	userIndex := os.Args[1]
+	tkn, err := NewToken(database, userIndex)
 	if err == nil {
 		fmt.Print("Token Seeded", tkn.Address)
 	} 
 
 }
 
-func NewToken(db *gorm.DB) (models.Token, error) {
+func NewToken(db *gorm.DB, i string) (models.Token, error) {
 	ethInstance, err := ethereum.Connect()
-	address, tx, _, err := ethereum.LaunchContract(ethInstance, "NewCoin", "NU")
+	address, tx, _, err := ethereum.LaunchContract(ethInstance, "1000000000000000000000", "NewCoin", "NU")
 	if err != nil {
 		fmt.Println("Error connecting to Ethereum")
 	}
+	userId, err := strconv.ParseUint(i, 10, 64)
+	if err != nil {
+		fmt.Println("Error converting userId to int")
+	}
 	creatorToken := models.Token{
-		UserId:          1,
+		UserId:          uint(userId),
 		ContractVersion: "v@next",
 		Name:            "NewCoin",
 		Symbol:          "NU",

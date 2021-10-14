@@ -86,7 +86,7 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 			"error": err.Error(),
 		})
 	}
-	addr, tx, _, err := ethereum.LaunchContract(client, tokenName, tokenTicker)
+	addr, tx, _, err := ethereum.LaunchContract(client, tokenName, tokenTicker, "TESTNET")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
