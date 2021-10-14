@@ -154,6 +154,22 @@ type WalletBalance struct {
 	Balance string `json:"balance"`
 }
 
+func (token *TokenHandler) GetGasPriceToLaunchToken(c echo.Context) error {
+	gasPrice, err := ethereum.GetGasPrice("MAINNET")
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not get gas price, "+ err.Error(),
+		})
+	}
+
+	currentGasPriceToLaunchContract := gasPrice * int64(3000000)
+	return c.JSON(http.StatusOK, map[string]string{
+		"gas_price": strconv.FormatUint(uint64(currentGasPriceToLaunchContract), 10),
+	})
+}
+
+
 func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 	username := c.FormValue("username")
 	if username == "" {

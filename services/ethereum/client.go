@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,12 +25,12 @@ import (
 )
 
 func Connect() (*ethclient.Client, error) {
-	client, err := ethclient.Dial(os.Getenv("ETH_NODE"))
+	client, err := ethclient.Dial(os.Getenv("TESTNET_NODE"))
 
 	if err != nil {
 		log.Println(err)
 	} else {
-		fmt.Println("=======================\n\nConnected to ethereum\n\n=======================")
+		fmt.Println("=======================\n\nConnected to " + os.Getenv("TESTNET") +"\n\n=======================")
 	}
 	return client, err
 }
@@ -39,14 +40,14 @@ func MainnetConnection() (*ethclient.Client, error) {
 	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
 		clientUrl = os.Getenv("MAINNET_NODE")
 	} else {
-		clientUrl = os.Getenv("ETH_NODE")
+		clientUrl = os.Getenv("TESTNET_NODE")
 	}
 	client, err := ethclient.Dial(clientUrl)
 
 	if err != nil {
 		log.Println(err.Error())
 	} else {
-		fmt.Println("=======================\n\nConnected to ethereum mainnet\n\n=======================")
+		fmt.Println("=======================\n\nConnected to ethereum " + os.Getenv("MAINNET") +"\n\n=======================")
 	}
 	return client, err
 }
@@ -87,22 +88,34 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 	return account.Address.Hex(), nil
 }
 
-func LaunchContract(client *ethclient.Client, name string, ticker string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
+func LaunchContract(client *ethclient.Client, name string, ticker string, network string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
 	fmt.Printf("Launching contract %v (%v)\n\n", name, ticker)
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
 	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
 
+	fmt.Println(network + "_ID:", os.Getenv(network+"_ID"))
 	_check(err)
-	gasPrice, err := GetGasPrice()
+	gasPrice, err := GetGasPrice(network)
 	_check(err)
-	txOptions, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(0003))
+	CHAIN_ID, err := strconv.ParseInt(os.Getenv(network + "_ID"), 10, 64)
+	txOptions, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(CHAIN_ID))
 	txOptions.Value = big.NewInt(0)      // in wei
-	txOptions.GasLimit = uint64(8000000) // in units
+	txOptions.GasLimit = uint64(3000000) // in units
 	txOptions.GasPrice = big.NewInt(gasPrice)
-	fmt.Printf("Gas Price: %v", gasPrice)
+	fmt.Printf("Gas Price: %v\n", gasPrice)
 	n := new(big.Int)
 	initialAmount, _ := n.SetString("1000000000000000000000", 10)
+
+	//see if balance is enough to launch
+	balance, err := client.BalanceAt(context.Background(), hotWallet.Address, nil)
+	fmt.Println("Balance: ", balance)
+	gasCost := big.NewInt(0).Mul(txOptions.GasPrice, big.NewInt(3000000))
+	fmt.Println("Gas Cost: ", gasCost)
+	if balance.Cmp(gasCost) == -1 {
+		return common.Address{}, nil, nil, errors.New("Not enough balance to launch contract")
+	}
+	
 	address, tx, token, err := contracts.DeployCreatorToken(txOptions, client, initialAmount, name, ticker)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err.Error())
@@ -111,14 +124,20 @@ func LaunchContract(client *ethclient.Client, name string, ticker string) (commo
 	return address, tx, token, nil
 }
 
-func GetGasPrice() (int64, error) {
-	url := os.Getenv("MAINNET_NODE")
-	method := "POST"
+func GetGasPrice(network string) (int64, error) {
+	var url string
+	if network == "MAINNET" {
+		url = os.Getenv("MAINNET_NODE")
+	} else if network == "TESTNET" {
+		url = os.Getenv("TESTNET_NODE")
+	} else {
+		return 0, errors.New("invalid network")
+	}
 
-	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":1}`)
+	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":` + os.Getenv(network+"_ID") +`}`)
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, payload)
+	req, err := http.NewRequest("POST", url, payload)
 
 	if err != nil {
 		fmt.Println(err)

@@ -26,7 +26,7 @@ func main() {
 
 func NewToken(db *gorm.DB, i string) (models.Token, error) {
 	ethInstance, err := ethereum.Connect()
-	address, tx, _, err := ethereum.LaunchContract(ethInstance, "NewCoin", "NU")
+	address, tx, _, err := ethereum.LaunchContract(ethInstance, "1000000000000000000000", "NewCoin", "NU")
 	if err != nil {
 		fmt.Println("Error connecting to Ethereum")
 	}
