@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/jinzhu/gorm"
-	"gopkg.in/gormigrate.v1"
 	"strconv"
 	"time"
 	"valorize-app/config"
 	"valorize-app/db"
 	"valorize-app/db/seeder"
 	"valorize-app/models"
+
+	"github.com/jinzhu/gorm"
+	"gopkg.in/gormigrate.v1"
 )
 
 func main() {
@@ -48,6 +49,11 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					Error; err != nil {
 					return err
 				}
+				if err := tx.AutoMigrate(&models.Link{}).
+					AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE").
+					Error; err != nil {
+					return err
+				}
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -58,6 +64,9 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					return nil
 				}
 				if err := tx.DropTable("tokens").Error; err != nil {
+					return nil
+				}
+				if err := tx.DropTable("links").Error; err != nil {
 					return nil
 				}
 				return nil
