@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -281,17 +282,52 @@ func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
 	}
 
 	links := jsonRequest["links"]
+	userLinks, err := models.GetUserLinks(&userData, *auth.server.DB)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not get user links",
+		})
+	}
+	
+
+	addedLinks := []models.Link{}
 	for _, link := range links {
-		err := models.SaveLink(&userData, link, *auth.server.DB)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, map[string]string{
-				"error": "could not save '" + link.Label + "': " + err.Error(),
-			})
+		var err error
+		if link.ID != 0 {
+			isUsersLink := checkIfUserLinkExists(userLinks, link)
+			if isUsersLink {
+				err = models.SaveLink(&userData, link, *auth.server.DB)
+				addedLinks = append(addedLinks, link)
+			}
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, map[string]string{
+					"error": "could not save '" + link.Label + "': " + err.Error(),
+				})
+			}
+		} else {
+			link.UserId = userData.ID
+			err = models.SaveLink(&userData, link, *auth.server.DB)
+			addedLinks = append(addedLinks, link)
 		}
 	}
 	return c.JSON(http.StatusOK, map[string][]models.Link{
-		"success": links,
+		"success": addedLinks,
 	})
+}
+
+func checkIfUserLinkExists(userLinks []models.Link, link models.Link) bool {
+	linkExists := false
+	fmt.Printf("incomingLink id:%v u:%v\n", link.ID,link.UserId)
+
+	for i, userLink := range userLinks {
+		fmt.Printf("%v userLink id:%v u:%v\n", i, userLink.ID, userLink.UserId)
+		if userLink.ID == link.ID && userLink.UserId == link.UserId {
+			fmt.Printf("shouldwrite\n")
+			return true
+		}
+	}
+	return linkExists
 }
 
 func (auth *AuthHandler) DeleteLinks(c echo.Context) error {
