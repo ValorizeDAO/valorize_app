@@ -263,3 +263,53 @@ func (auth *AuthHandler) UpdateProfile(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
 }
+
+
+var jsonRequest map[string][]models.Link
+
+func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
+	
+	if err := c.Bind(&jsonRequest); err != nil {
+		return err
+	}
+	userData, err := services.AuthUser(c, *auth.server.DB)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find logged in user",
+		})
+	}
+
+	links := jsonRequest["links"]
+	for _, link := range links {
+		err := models.SaveLink(&userData, link, *auth.server.DB)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "could not save '" + link.Label + "': " + err.Error(),
+			})
+		}
+	}
+	return c.JSON(http.StatusOK, map[string][]models.Link{
+		"success": links,
+	})
+}
+
+func (auth *AuthHandler) DeleteLinks(c echo.Context) error {
+//   username := c.Param("username")
+//   userData, err := models.GetUserByUsername(username, *user.server.DB)
+//   if err != nil {
+//     return c.JSON(http.StatusNotFound, map[string]string{
+//       "error": "could not find " + username,
+//     })
+//   }
+//   links, err := models.GetUserLinks(&userData, *user.server.DB)
+//   if err != nil {
+//     return c.JSON(http.StatusNotFound, map[string]string{
+//       "error": "could not find links",
+//     })
+//   }
+//   return c.JSON(http.StatusOK, map[string][]models.Link{
+//     "links": links,
+//   })
+  return nil
+}

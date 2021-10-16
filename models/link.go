@@ -21,3 +21,11 @@ func GetUserLinks(user *User, db gorm.DB) ([]Link, error) {
 	}
 	return links, nil
 }
+
+func SaveLink(user *User, link Link, db gorm.DB) error {
+	link.UserId = user.ID
+	if err := db.Save(&link).Error; err != nil {
+		return err
+	}
+	return nil
+}
