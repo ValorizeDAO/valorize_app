@@ -29,3 +29,10 @@ func SaveLink(user *User, link Link, db gorm.DB) error {
 	}
 	return nil
 }
+
+func DeleteLink(link Link, db gorm.DB) error {
+	if err := db.Delete(&link).Error; err != nil {
+		return err
+	}
+	return nil
+}
