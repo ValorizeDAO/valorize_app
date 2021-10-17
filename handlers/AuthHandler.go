@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -307,7 +306,7 @@ func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
 			}
 		} else {
 			link.UserId = userData.ID
-			err = models.SaveLink(&userData, link, *auth.server.DB)
+			link, err = models.CreateLink(&userData, link, *auth.server.DB)
 			addedLinks = append(addedLinks, link)
 		}
 	}
@@ -318,12 +317,9 @@ func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
 
 func checkIfUserLinkExists(userLinks []models.Link, link models.Link) bool {
 	linkExists := false
-	fmt.Printf("incomingLink id:%v u:%v\n", link.ID,link.UserId)
 
-	for i, userLink := range userLinks {
-		fmt.Printf("%v userLink id:%v u:%v\n", i, userLink.ID, userLink.UserId)
+	for _, userLink := range userLinks {
 		if userLink.ID == link.ID && userLink.UserId == link.UserId {
-			fmt.Printf("shouldwrite\n")
 			return true
 		}
 	}
@@ -355,8 +351,7 @@ func (auth *AuthHandler) DeleteLinks(c echo.Context) error {
 	}
 		
 	for _, link := range links {
-		fmt.Print(link)
-		if link.ID != uint(linkIdInt) { continue }
+		if link.ID != uint(linkIdInt) { continue } //boolean gate to check if link is associated with user
 		err = models.DeleteLink(link, *auth.server.DB)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{
