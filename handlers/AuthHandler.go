@@ -157,23 +157,6 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 
 }
 
-func (auth *AuthHandler) Show(c echo.Context) error {
-	username := c.Param("username")
-	user, err := models.GetUserByUsername(username, *auth.server.DB)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": "could not find " + user.Username,
-		})
-	}
-	userStruct, err := json.Marshal(models.GetUserProfile(&user))
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "could not find logged in user information",
-		})
-	}
-	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
-
-}
 func (auth *AuthHandler) ShowUser(c echo.Context) error {
 	user, err := services.AuthUser(c, *auth.server.DB)
 
