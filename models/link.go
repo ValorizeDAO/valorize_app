@@ -1,6 +1,10 @@
 package models
 
-import "github.com/jinzhu/gorm"
+import (
+	"fmt"
+
+	"github.com/jinzhu/gorm"
+)
 
 type Link struct {
     ID        		 uint 	  `json:"id" gorm:"primary_key"`
@@ -20,4 +24,30 @@ func GetUserLinks(user *User, db gorm.DB) ([]Link, error) {
 		return make([]Link, 0), err
 	}
 	return links, nil
+}
+
+func SaveLink(user *User, link Link, db gorm.DB) error {
+	link.UserId = user.ID
+	fmt.Println("\n\n SAVING \n\n")
+	if err := db.Save(&link).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func CreateLink(user *User, link Link, db gorm.DB) (Link, error) {
+	link.UserId = user.ID
+	fmt.Println("\n\n CREATING \n\n")
+	result := db.Create(&link)
+	if result.Error != nil {
+		return link, result.Error
+	}
+	return link, nil
+}
+
+func DeleteLink(link Link, db gorm.DB) error {
+	if err := db.Delete(&link).Error; err != nil {
+		return err
+	}
+	return nil
 }

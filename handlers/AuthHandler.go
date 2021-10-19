@@ -157,23 +157,6 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 
 }
 
-func (auth *AuthHandler) Show(c echo.Context) error {
-	username := c.Param("username")
-	user, err := models.GetUserByUsername(username, *auth.server.DB)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": "could not find " + user.Username,
-		})
-	}
-	userStruct, err := json.Marshal(models.GetUserProfile(&user))
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "could not find logged in user information",
-		})
-	}
-	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
-
-}
 func (auth *AuthHandler) ShowUser(c echo.Context) error {
 	user, err := services.AuthUser(c, *auth.server.DB)
 
@@ -262,4 +245,113 @@ func (auth *AuthHandler) UpdateProfile(c echo.Context) error {
 		})
 	}
 	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
+}
+
+type response struct {
+	Success bool 		`json:"success"`
+	Links []models.Link `json:"links"`
+}
+
+var jsonRequest map[string][]models.Link
+
+func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
+	
+	if err := c.Bind(&jsonRequest); err != nil {
+		return err
+	}
+	userData, err := services.AuthUser(c, *auth.server.DB)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find logged in user",
+		})
+	}
+
+	links := jsonRequest["links"]
+	userLinks, err := models.GetUserLinks(&userData, *auth.server.DB)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not get user links",
+		})
+	}
+	
+
+	addedLinks := []models.Link{}
+	for _, link := range links {
+		var err error
+		if link.ID != 0 {
+			isUsersLink := checkIfUserLinkExists(userLinks, link)
+			if isUsersLink {
+				err = models.SaveLink(&userData, link, *auth.server.DB)
+				addedLinks = append(addedLinks, link)
+			}
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, map[string]string{
+					"error": "could not save '" + link.Label + "': " + err.Error(),
+				})
+			}
+		} else {
+			link.UserId = userData.ID
+			link, err = models.CreateLink(&userData, link, *auth.server.DB)
+			addedLinks = append(addedLinks, link)
+		}
+	}
+	return c.JSON(http.StatusOK, response{
+		Success: true,
+		Links: addedLinks,
+	})
+}
+
+func checkIfUserLinkExists(userLinks []models.Link, link models.Link) bool {
+	linkExists := false
+
+	for _, userLink := range userLinks {
+		if userLink.ID == link.ID && userLink.UserId == link.UserId {
+			return true
+		}
+	}
+	return linkExists
+}
+
+func (auth *AuthHandler) DeleteLinks(c echo.Context) error {
+	linkId := c.FormValue("id")
+	linkIdInt, err := strconv.Atoi(linkId)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "id parameter invalid",
+		})
+	}
+
+	userData, err := services.AuthUser(c, *auth.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find " + userData.Username,
+		})
+	}
+
+	links, err := models.GetUserLinks(&userData, *auth.server.DB)
+
+	if err != nil || len(links) == 0 {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find user links",
+		})
+	}
+		
+	for _, link := range links {
+		if link.ID != uint(linkIdInt) { continue } //boolean gate to check if link is associated with user
+		err = models.DeleteLink(link, *auth.server.DB)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{
+				"error": "could not delete link",
+			})
+		} else {
+			return c.JSON(http.StatusOK, map[string]string{
+				"success": "link deleted",
+			})
+		}
+	}
+	return c.JSON(http.StatusOK, map[string]string{
+		"status": "success",
+	})
 }

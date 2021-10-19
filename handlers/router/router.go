@@ -51,6 +51,8 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	me.GET("", auth.ShowUser)
 	me.PUT("/picture", auth.UpdatePicture)
 	me.PUT("/profile", auth.UpdateProfile)
+	me.PUT("/links", auth.UpdateLinks)
+	me.DELETE("/links", auth.DeleteLinks)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
