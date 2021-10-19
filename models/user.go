@@ -15,6 +15,7 @@ type User struct {
 	IsAlphaUser 	 bool     `json:"is_alpha_user gorm:boolean"`
 	Token            Token    `json:"token" gorm:"ForeignKey:UserId;AssociationForeignKey:ID"`
 	Wallets          []Wallet `json:"wallets" gorm:"ForeignKey:userId;AssociationForeignKey:user_id"`
+	Links			 []Link   `json:"links" gorm:"ForeignKey:userId;AssociationForeignKey:user_id"`
 }
 
 type UserProfile struct {
@@ -28,6 +29,7 @@ type UserProfile struct {
 	HasVerifiedEmail bool   `json:"hasVerifiedEmail"`
 	IsAlphaUser      bool   `json:"isAlphaUser"`
 	Token            Token  `json:"token"`
+	Links			 []Link `json:"links"`
 }
 
 type UserPublicProfile struct {
@@ -52,6 +54,7 @@ func GetUserProfile(user *User) UserProfile {
 		user.HasVerifiedEmail,
 		user.IsAlphaUser,
 		user.Token,
+		user.Links,
 	}
 }
 
@@ -97,5 +100,21 @@ func GetUserByUsername(username string, db gorm.DB) (User, error) {
 		}
 		return User{}, err
 	}
+	return m, nil
+}
+
+func GetUserProfileByUsername(username string, db gorm.DB) (User, error) {
+	var m User
+	if err := db.Preload("Token").Where("username = ?", username).First(&m).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return User{}, err
+		}
+		return User{}, err
+	}
+	links, err := GetUserLinks(&m, db)
+	if err != nil {
+		return User{}, err
+	}
+	m.Links = links
 	return m, nil
 }
