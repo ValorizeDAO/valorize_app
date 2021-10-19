@@ -247,6 +247,10 @@ func (auth *AuthHandler) UpdateProfile(c echo.Context) error {
 	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
 }
 
+type response struct {
+	Success bool 		`json:"success"`
+	Links []models.Link `json:"links"`
+}
 
 var jsonRequest map[string][]models.Link
 
@@ -293,8 +297,9 @@ func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
 			addedLinks = append(addedLinks, link)
 		}
 	}
-	return c.JSON(http.StatusOK, map[string][]models.Link{
-		"success": addedLinks,
+	return c.JSON(http.StatusOK, response{
+		Success: true,
+		Links: addedLinks,
 	})
 }
 
