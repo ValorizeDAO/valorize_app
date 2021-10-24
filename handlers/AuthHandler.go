@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
@@ -196,7 +197,7 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
 	}
 	defer src.Close()
 
-	filename := strconv.FormatUint(uint64(userData.ID), 10) + "_avatar"
+	filename := os.Getenv("ENVIRONMENT")[0:1] + "/" + strconv.FormatUint(uint64(userData.ID), 10) + "_avatar"
 	resp, err := cld.Upload.Upload(context.Background(), src, uploader.UploadParams{PublicID: filename})
 
 	if err != nil {
@@ -205,7 +206,8 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
 		})
 	}
 
-	userData.Avatar = resp.SecureURL
+	cachedUrl := resp.SecureURL + "?t=" + strconv.FormatInt(time.Now().Unix(), 10)
+	userData.Avatar = cachedUrl
 	if auth.server.DB.Save(&userData).Error != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "could not save user data",
@@ -213,7 +215,7 @@ func (auth *AuthHandler) UpdatePicture(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{
-		"image": resp.SecureURL,
+		"image": cachedUrl,
 	})
 }
 
