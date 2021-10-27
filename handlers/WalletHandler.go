@@ -1,9 +1,11 @@
 package handlers
 
 import (
-  "github.com/labstack/echo/v4"
-  "net/http"
-  "valorize-app/models"
+	"net/http"
+	"valorize-app/models"
+	"valorize-app/services"
+
+	"github.com/labstack/echo/v4"
 )
 
 type WalletHandler struct {
@@ -15,9 +17,9 @@ func NewWalletHandler(s *Server) *WalletHandler {
     server: s,
   }
 }
+
 func (wallet *WalletHandler) Index(c echo.Context) error {
-  username := c.Param("username")
-  userData, err := models.GetUserByUsername(username, *wallet.server.DB)
+  userData, err := services.AuthUser(c, *wallet.server.DB)
   if err != nil {
     return c.JSON(http.StatusNotFound, map[string]string{
       "error": "could not find " + userData.Username,
@@ -29,11 +31,10 @@ func (wallet *WalletHandler) Index(c echo.Context) error {
   for i, wallet := range userWallets {
     addresses[i] = wallet.Address
   }
-  return c.JSON(http.StatusOK, UserWalletResponse{userData.Username, addresses})
+  return c.JSON(http.StatusOK, UserWalletResponse{addresses})
 }
 
 type UserWalletResponse struct{
-  Username string  `json:"username"`
   Wallets   []string `json:"wallet"`
 }
 
