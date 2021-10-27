@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"valorize-app/contracts"
 	"valorize-app/models"
+	"valorize-app/services"
 	"valorize-app/services/ethereum"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -170,13 +171,8 @@ func (token *TokenHandler) GetGasPriceToLaunchToken(c echo.Context) error {
 }
 
 
-func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
-	username := c.FormValue("username")
-	if username == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": "username parameter is required on request",
-		})
-	}
+func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
+	user, _ := services.AuthUser(c, *token.server.DB)
 
 	creatorTokenId, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
@@ -188,18 +184,6 @@ func (token *TokenHandler) GetBalanceForCoinForUser(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token",
-		})
-	}
-
-	user, err := models.GetUserByUsername(username, *token.server.DB)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": "could not find user with username " + username,
-		})
-	}
-	if !user.HasDeployedToken {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": user.Username + " has not deployed a token",
 		})
 	}
 
