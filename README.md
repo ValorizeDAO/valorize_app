@@ -61,7 +61,7 @@ go run web.go
 Valorize App is open source under the [MIT License](LICENSE.md)
 
 ## Troubleshooting
-If you run into any issues, please email us at {{ ADMIN_EMAIL }} or reach out to us via our Discord
+If you run into any issues, please reach out to us in the `#dev-general` channel in our [Discord](https://discord.gg/3PRMWrH9DT)
 
 ## Contributing
 Pull requests are welcome!
