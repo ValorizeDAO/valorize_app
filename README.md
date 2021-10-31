@@ -37,7 +37,8 @@ You can create a new database from the command line or whatever GUI client you c
 2. After duplicating the example environment file, make sure to update the database credentials to your local credentials and use the name of database you created in step 3
 3. You also need to get set up with an rpc provider and point the .env variables `TESTNET_NODE` and `MAINNET_NODE` to it. The provider can be either a truffle instance, Infura, or Alchemy url. This is necessary for the app to function in different capacities.
 4. Services can be left blank or setup by getting your own keys.
-5. You will also need to set up a keystore file for the operations that require accessing testnet. The one way to get one is to generate it by downloading geth and creating a new account instructions. Then copying the contents of your keystore json as the environment variable.
+5. You will also need to set up a keystore file for the operations that require accessing testnet. One way to get one is to generate it by downloading geth, creating a new account, then copying the contents of your keystore json as the environment variable.
+[geth account setup instructions →](https://geth.ethereum.org/docs/interface/managing-your-accounts)
 6. Lastly send some test `ETH` to your address through a faucet.
 
 ### 5. Run migrations
