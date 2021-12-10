@@ -7,12 +7,12 @@ import (
 )
 
 type Link struct {
-    ID        		 uint 	  `json:"id" gorm:"primary_key"`
-	Label            string   `json:"label" gorm:"type:varchar(200);"`
-	Icon             string   `json:"icon" gorm:"type:varchar(200);"`
-	Url              string   `json:"url" gorm:"type:varchar(200);"`
-	UserId           uint     `json:"user_id"`
-	Description 	 string   `json:"description" gorm:"type:varchar(200);"`
+	ID          uint   `json:"id" gorm:"primary_key"`
+	Label       string `json:"label" gorm:"type:varchar(200);"`
+	Icon        string `json:"icon" gorm:"type:varchar(200);"`
+	Url         string `json:"url" gorm:"type:varchar(200);"`
+	UserId      uint   `json:"user_id"`
+	Description string `json:"description" gorm:"type:varchar(200);"`
 }
 
 func GetUserLinks(user *User, db gorm.DB) ([]Link, error) {
