@@ -6,8 +6,20 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+type TokenType int
+
+const (
+	CreatorToken TokenType = iota
+	SimpleToken
+)
+
+func (t TokenType) String() string {
+	return [...]string{"Creator Token", "Simple Token"}[t]
+}
+
 type Token struct {
 	ID              uint       `json:"id" gorm:"primary_key"`
+	TokenType       uint       `json:"token_type" gorm:"not null;default:0"`
 	Name            string     `json:"name" gorm:"type:varchar(200);"`
 	Address         string     `json:"address" gorm:"type:varchar(200);"`
 	OwnerAddress    string     `json:"owner_address" gorm:"type:varchar(200);"`

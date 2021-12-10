@@ -5,7 +5,6 @@ import (
 	"time"
 	"valorize-app/config"
 	"valorize-app/db"
-	"valorize-app/db/seeder"
 	"valorize-app/models"
 
 	"github.com/jinzhu/gorm"
@@ -22,13 +21,6 @@ func main() {
 	} else {
 		print("migrations failed.", err)
 	}
-	err = seeder.RunSeeder(database)
-	if err == nil {
-		print("seeding did run successfully")
-	} else {
-		print("seeding failed.", err)
-	}
-
 }
 func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 	timeNow := strconv.FormatUint(uint64(time.Now().Unix()), 10)
@@ -74,4 +66,3 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 		},
 	})
 }
-
