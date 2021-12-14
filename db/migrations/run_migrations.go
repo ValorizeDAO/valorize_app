@@ -17,7 +17,7 @@ func main() {
 	m := GetMigrations(database)
 	err := m.Migrate()
 	if err == nil {
-		print("Migrations did run successfully, seeding now")
+		print("Migrations did run successfully")
 	} else {
 		print("migrations failed.", err)
 	}
