@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"strconv"
 	"time"
 	"valorize-app/config"
@@ -14,6 +15,13 @@ import (
 func main() {
 	cfg := config.NewConfig()
 	database := db.Init(cfg)
+
+	drop := flag.String("d", "none", "drop token_type column")
+	flag.Parse()
+	if *drop == "token_type" {
+		database.Exec("ALTER TABLE tokens DROP COLUMN token_type;")
+	}
+
 	m := GetMigrations(database)
 	err := m.Migrate()
 	if err == nil {

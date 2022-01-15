@@ -1,25 +1,31 @@
 package models
 
 import (
+	"database/sql/driver"
 	"time"
 
 	"github.com/jinzhu/gorm"
 )
 
-type TokenType int
+type tokenType string
 
 const (
-	CreatorToken TokenType = iota
-	SimpleToken
+	creator tokenType = "creator"
+	simple  tokenType = "simple"
 )
 
-func (t TokenType) String() string {
-	return [...]string{"Creator Token", "Simple Token"}[t]
+func (t *tokenType) Scan(value interface{}) error {
+	*t = tokenType(value.([]byte))
+	return nil
+}
+
+func (t tokenType) Value() (driver.Value, error) {
+	return string(t), nil
 }
 
 type Token struct {
 	ID              uint       `json:"id" gorm:"primary_key"`
-	TokenType       uint       `json:"token_type" gorm:"not null;default:0"`
+	TokenType       string     `json:"token_type2" gorm:"not null; type:enum('simple', 'creator'); default:'creator';"`
 	Name            string     `json:"name" gorm:"type:varchar(200);"`
 	Address         string     `json:"address" gorm:"type:varchar(200);"`
 	OwnerAddress    string     `json:"owner_address" gorm:"type:varchar(200);"`
@@ -31,6 +37,10 @@ type Token struct {
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	DeletedAt       *time.Time `json:"deleted_at" sql:"index"`
+}
+
+func (Token) TableName() string {
+	return "tokens"
 }
 
 type TokenResponse struct {
