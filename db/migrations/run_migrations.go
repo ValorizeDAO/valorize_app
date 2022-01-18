@@ -18,12 +18,13 @@ func main() {
 
 	drop := flag.String("d", "none", "drop token_type column")
 	flag.Parse()
+	m := GetMigrations(database)
+	err := m.Migrate()
+
 	if *drop == "token_type" {
 		database.Exec("ALTER TABLE tokens DROP COLUMN token_type;")
 	}
 
-	m := GetMigrations(database)
-	err := m.Migrate()
 	if err == nil {
 		print("Migrations did run successfully")
 	} else {
