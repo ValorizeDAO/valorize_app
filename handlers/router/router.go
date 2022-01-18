@@ -53,6 +53,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	me.PUT("/profile", auth.UpdateProfile)
 	me.PUT("/links", auth.UpdateLinks)
 	me.DELETE("/links", auth.DeleteLinks)
+	me.PUT("/tokendata", auth.UpdateTokenData)
 	me.GET("/wallets", wallet.Index)
 	myTokens := me.Group("/tokens")
 	myTokens.GET("/:id/balance", token.GetCoinBalanceForAuthUser)
@@ -61,6 +62,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	r.POST("/wallet", eth.CreateWalletFromRequest)
 	r.POST("/wallet/new", eth.AddWalletToAccount)
 	r.POST("/deploy", eth.DeployCreatorToken)
+	r.POST("/deploy/simpletoken", eth.DeploySimpleToken)
 
 	userGroup := api.Group("/users")
 	userGroup.GET("/:username", user.Show)
@@ -68,7 +70,6 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	userGroup.GET("/:username/token", token.Show)
 	userGroup.POST("/:username/token/stakingrewards", token.GetTokenStakingRewards)
 	userGroup.POST("/:username/token/sellingrewards", token.GetTokenSellingRewards)
-
 
 	u := api.Group("/utils")
 	u.GET("/price", utils.ShowEthPrice)

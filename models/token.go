@@ -29,8 +29,11 @@ type Token struct {
 	Name            string     `json:"name" gorm:"type:varchar(200);"`
 	Address         string     `json:"address" gorm:"type:varchar(200);"`
 	OwnerAddress    string     `json:"owner_address" gorm:"type:varchar(200);"`
+	VaultAddress    string     `json:"vault_address" gorm:"type:varchar(200);"`
+	AdminAddresses  []*Wallet  `json:"token_admin" gorm:"type:varchar(200); many2many:token_admin;"`
 	Symbol          string     `json:"symbol" gorm:"type:varchar(200);"`
 	Network         string     `json:"network" gorm:"type:varchar(200);"`
+	ChainId         string     `json:"chain_id" gorm:"type:varchar(200);"`
 	ContractVersion string     `json:"contract_version" gorm:"type:varchar(200);"`
 	TxHash          string     `json:"tx_hash" gorm:"type:varchar(200);"`
 	UserId          uint       `json:"user_id"`
