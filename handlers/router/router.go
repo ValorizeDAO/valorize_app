@@ -49,6 +49,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 
 	tokenPublic := api.Group("/token")
 	tokenPublic.GET("/:id", token.ShowToken)
+	tokenPublic.GET("/:id/admins", token.ShowTokenAdmins)
 
 	me := api.Group("/me", appmiddleware.AuthMiddleware)
 	me.GET("", auth.ShowUser)

@@ -53,23 +53,6 @@ func ConnectToChain(chainId string) (*ethclient.Client, error) {
 	return client, err
 }
 
-func MainnetConnection() (*ethclient.Client, error) {
-	var clientUrl string
-	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
-		clientUrl = os.Getenv("MAINNET_NODE")
-	} else {
-		clientUrl = os.Getenv("TESTNET_NODE")
-	}
-	client, err := ethclient.Dial(clientUrl)
-
-	if err != nil {
-		log.Println(err.Error())
-	} else {
-		fmt.Println("=======================\n\nConnected to ethereum " + os.Getenv("MAINNET") + "\n\n=======================")
-	}
-	return client, err
-}
-
 func NewKeystore(password string) (accounts.Account, error) {
 	ks := keystore.NewKeyStore("./wallets", keystore.StandardScryptN, keystore.StandardScryptP)
 	account, err := ks.NewAccount(password)

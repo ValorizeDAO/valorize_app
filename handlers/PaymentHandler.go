@@ -69,7 +69,7 @@ func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, s.URL)
 }
 func (payment *PaymentHandler) _fulfillOrder(session stripe.CheckoutSession) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
-	client, err := ethereum.MainnetConnection()
+	client, err := ethereum.ConnectToChain("1")
 
 	addr, tx, instance, err := ethereum.LaunchContract(client, session.Metadata["name"], session.Metadata["symbol"], "MAINNET")
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 )
 
@@ -47,7 +48,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
+	client, err := ethereum.ConnectToChain("1")
 	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 
 	ownerTokenBalance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(user.Token.OwnerAddress))
@@ -91,6 +92,33 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 	})
 }
 
+type WalletInfo struct {
+	Address string
+	userId  string
+}
+
+func (token *TokenHandler) ShowTokenAdmins(c echo.Context) error {
+	tokenId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	var t models.Token
+	if err := token.server.DB.Preload("AdminAddresses").Where("id=?", tokenId).First(&t).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+		}
+	}
+	//var wallets []WalletInfo
+	fmt.Println(t.AdminAddresses)
+	return c.JSON(http.StatusOK, map[string]string{
+		"administrators": "test",
+	})
+}
+
 func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	username := c.Param("username")
 	etherToCheck := c.FormValue("etherToCheck")
@@ -112,7 +140,7 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
+	client, err := ethereum.ConnectToChain("1")
 	tokenInstance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	ethToCheckBig, ok := new(big.Int).SetString(etherToCheck, 10)
 
@@ -151,7 +179,7 @@ func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
+	client, err := ethereum.ConnectToChain("1")
 	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	tokenToCheckBig, ok := new(big.Int).SetString(tokensToCheck, 10)
 	fmt.Printf("tokensToCheckBig: %s", tokenToCheckBig)
@@ -219,7 +247,7 @@ func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
+	client, err := ethereum.ConnectToChain("1")
 	instance, err := contracts.NewCreatorToken(common.HexToAddress(creatorToken.Address), client)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
