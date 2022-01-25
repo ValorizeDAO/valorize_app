@@ -47,6 +47,9 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	api := e.Group("/api/v0")
 	api.GET("/get-gas-price", token.GetGasPriceToLaunchToken)
 
+	tokenPublic := api.Group("/token")
+	tokenPublic.GET("/:id", token.ShowToken)
+
 	me := api.Group("/me", appmiddleware.AuthMiddleware)
 	me.GET("", auth.ShowUser)
 	me.PUT("/picture", auth.UpdatePicture)

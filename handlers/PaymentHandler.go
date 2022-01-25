@@ -130,7 +130,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 			ContractVersion: "v0.2.2",
 			Name:            session.Metadata["name"],
 			Symbol:          session.Metadata["symbol"],
-			Network:         "MAINNET",
+			ChainId:         "1",
 			OwnerAddress:    os.Getenv("HOTWALLET"),
 			Address:         addr.String(),
 			TxHash:          tx.Hash().String(),

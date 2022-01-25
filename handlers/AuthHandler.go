@@ -305,6 +305,7 @@ func (auth *AuthHandler) UpdateTokenData(c echo.Context) error {
 
 	user.HasDeployedToken = true
 	err = auth.server.DB.Save(&user).Error
+	tokenStruct, err := json.Marshal(token)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
@@ -312,7 +313,7 @@ func (auth *AuthHandler) UpdateTokenData(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, adminAccounts)
+	return c.JSON(http.StatusOK, json.RawMessage(tokenStruct))
 }
 
 type response struct {

@@ -12,7 +12,7 @@ type Wallet struct {
 	Raw            string   `gorm:"size:1000"`
 	UserId         uint     `gorm:"default:null;"`
 	User           User     `gorm:"foreignKey:UserId"`
-	Administrating []*Token `json:"token_admin" gorm:"type:varchar(200); many2many:token_admin;"`
+	Administrating []*Token `json:"is_administrating" gorm:"type:varchar(200); many2many:token_wallet;"`
 }
 
 func AddExternalWalletForUser(user *User, address string, db gorm.DB) error {
