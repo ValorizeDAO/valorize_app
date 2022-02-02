@@ -6,13 +6,16 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
-	"valorize-app/contracts"
+	"valorize-app/creatortoken"
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+	"valorize-app/simpletoken"
+	timedmint "valorize-app/timedminttoken"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 )
 
@@ -27,7 +30,7 @@ func NewTokenHandler(s *Server) *TokenHandler {
 }
 
 type PublicTokenResponse struct {
-	Token *models.Token 	`json:"token"`
+	Token     *models.Token     `json:"token"`
 	PriceData map[string]string `json:"price_data"`
 }
 
@@ -46,12 +49,12 @@ func (token *TokenHandler) Show(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
-	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	client, err := ethereum.ConnectToChain("1")
+	instance, err := creatortoken.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 
 	ownerTokenBalance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(user.Token.OwnerAddress))
 	totalMinted, err := instance.TotalSupply(&bind.CallOpts{})
-	etherStaked, err :=  client.BalanceAt(context.Background(), common.HexToAddress(user.Token.Address), nil)
+	etherStaked, err := client.BalanceAt(context.Background(), common.HexToAddress(user.Token.Address), nil)
 
 	return c.JSON(http.StatusOK, PublicTokenResponse{
 		Token: &user.Token,
@@ -62,7 +65,108 @@ func (token *TokenHandler) Show(c echo.Context) error {
 		},
 	})
 }
+func returnErr(err error) map[string]string {
+	return map[string]string{
+		"error": err.Error(),
+	}
+}
 
+func (token *TokenHandler) ShowToken(c echo.Context) error {
+	tokenId, err := strconv.Atoi(c.Param("id"))
+	tokenData, err := models.GetTokenById(uint64(tokenId), *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+
+	client, err := ethereum.ConnectToChain(tokenData.ChainId)
+	var totalSupply *big.Int
+	var maxSupply *big.Int
+
+	switch tokenData.TokenType {
+	case "simple":
+		tokenInstance, err := simpletoken.NewSimpleToken(common.HexToAddress(tokenData.Address), client)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		totalSupply, err = tokenInstance.TotalSupply(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		maxSupply = totalSupply
+	case "timed_mint":
+		tokenInstance, err := timedmint.NewTimedMintToken(common.HexToAddress(tokenData.Address), client)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		totalSupply, err = tokenInstance.TotalSupply(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		maxSupply, err = tokenInstance.SupplyCap(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+	case "creator":
+		tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(tokenData.Address), client)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		totalSupply, err = tokenInstance.TotalSupply(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		maxSupply = big.NewInt(0)
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"name":            tokenData.Name,
+		"symbol":          tokenData.Symbol,
+		"address":         tokenData.Address,
+		"ownerAddress":    tokenData.OwnerAddress,
+		"vaultAddress":    tokenData.VaultAddress,
+		"tokenType":       tokenData.TokenType,
+		"contractVersion": tokenData.ContractVersion,
+		"chainId":         tokenData.ChainId,
+		"totalSupply":     totalSupply.String(),
+		"maxSupply":       maxSupply.String(),
+	})
+}
+
+type WalletInfo struct {
+	Address string `json:"address"`
+	UserId  uint   `json:"user"`
+}
+
+func (token *TokenHandler) ShowTokenAdmins(c echo.Context) error {
+	tokenId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	var t models.Token
+	if err := token.server.DB.Preload("AdminAddresses").Where("id=?", tokenId).First(&t).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+		}
+	}
+	var wallets []WalletInfo
+	for _, s := range t.AdminAddresses {
+		wallets = append(wallets, WalletInfo{s.Address, s.ID})
+	}
+	return c.JSON(http.StatusOK, map[string][]WalletInfo{
+		"administrators": wallets,
+	})
+}
 
 func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	username := c.Param("username")
@@ -85,8 +189,8 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
-	tokenInstance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	client, err := ethereum.ConnectToChain("1")
+	tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	ethToCheckBig, ok := new(big.Int).SetString(etherToCheck, 10)
 
 	if !ok {
@@ -124,8 +228,8 @@ func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
-	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	client, err := ethereum.ConnectToChain("1")
+	instance, err := creatortoken.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	tokenToCheckBig, ok := new(big.Int).SetString(tokensToCheck, 10)
 	fmt.Printf("tokensToCheckBig: %s", tokenToCheckBig)
 	if !ok {
@@ -144,10 +248,9 @@ func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
 	})
 }
 
-
 type TokenBalanceResponse struct {
-	TotalBalance string `json:"total_balance"`
-	Wallets []WalletBalance `json:"wallets"`
+	TotalBalance string          `json:"total_balance"`
+	Wallets      []WalletBalance `json:"wallets"`
 }
 
 type WalletBalance struct {
@@ -160,7 +263,7 @@ func (token *TokenHandler) GetGasPriceToLaunchToken(c echo.Context) error {
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "could not get gas price, "+ err.Error(),
+			"error": "could not get gas price, " + err.Error(),
 		})
 	}
 
@@ -169,7 +272,6 @@ func (token *TokenHandler) GetGasPriceToLaunchToken(c echo.Context) error {
 		"gas_price": strconv.FormatUint(uint64(currentGasPriceToLaunchContract), 10),
 	})
 }
-
 
 func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
 	user, _ := services.AuthUser(c, *token.server.DB)
@@ -194,15 +296,15 @@ func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
 		})
 	}
 
-	client, err := ethereum.MainnetConnection()
-	instance, err := contracts.NewCreatorToken(common.HexToAddress(creatorToken.Address), client)
+	client, err := ethereum.ConnectToChain("1")
+	instance, err := creatortoken.NewCreatorToken(common.HexToAddress(creatorToken.Address), client)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token",
 		})
 	}
 
-	var WalletBalances []WalletBalance;
+	var WalletBalances []WalletBalance
 	totalBalance := new(big.Int)
 	for _, wallet := range wallets {
 		balance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(wallet))
@@ -212,13 +314,13 @@ func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
 			})
 		}
 		if balance.Cmp(big.NewInt(0)) > 0 {
-			WalletBalances = append(WalletBalances, WalletBalance{ wallet, balance.String(),})
+			WalletBalances = append(WalletBalances, WalletBalance{wallet, balance.String()})
 			totalBalance.Add(totalBalance, balance)
 		}
 	}
 
 	return c.JSON(http.StatusOK, TokenBalanceResponse{
 		TotalBalance: totalBalance.String(),
-		Wallets: WalletBalances,
+		Wallets:      WalletBalances,
 	})
 }

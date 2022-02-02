@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -102,5 +103,33 @@ func (eth *EthHandler) DeployCreatorToken(c echo.Context) error {
 		"network":          os.Getenv("ETH_TESTNET"),
 		"address":          addr.String(),
 		"tx":               tx.Hash().String(),
+	})
+}
+
+func (eth *EthHandler) DeploySimpleToken(c echo.Context) error {
+	tokenName := c.FormValue("tokenName")
+	tokenTicker := c.FormValue("tokenTicker")
+	tokenType := c.FormValue("tokenType") //string
+	initialSupply := c.FormValue("initialSupply")
+	mintable := c.FormValue("mintable") //bool
+	fmt.Print(tokenType, initialSupply, mintable)
+
+	//	client, err := ethereum.Connect()
+	//	if err != nil {
+	//		return c.JSON(http.StatusInternalServerError, map[string]string{
+	//			"error": err.Error(),
+	//		})
+	//	}
+	//	addr, tx, _, err := ethereum.LaunchContract(client, tokenName, tokenTicker, "TESTNET")
+	//	if err != nil {
+	//		return c.JSON(http.StatusInternalServerError, map[string]string{
+	//			"error": err.Error(),
+	//		})
+	//	}
+	//	user, _ := services.AuthUser(c, *eth.server.DB)
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"tokenName":   tokenName,
+		"tokenTicker": tokenTicker,
 	})
 }

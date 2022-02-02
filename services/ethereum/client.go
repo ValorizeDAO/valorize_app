@@ -12,7 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"valorize-app/contracts"
+	"valorize-app/creatortoken"
 	"valorize-app/models"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -30,24 +30,25 @@ func Connect() (*ethclient.Client, error) {
 	if err != nil {
 		log.Println(err)
 	} else {
-		fmt.Println("=======================\n\nConnected to " + os.Getenv("TESTNET") +"\n\n=======================")
+		fmt.Println("=======================\n\nConnected to " + os.Getenv("TESTNET") + "\n\n=======================")
 	}
 	return client, err
 }
 
-func MainnetConnection() (*ethclient.Client, error) {
-	var clientUrl string
-	if os.Getenv("ENVIRONMENT") == "PRODUCTION" {
-		clientUrl = os.Getenv("MAINNET_NODE")
-	} else {
-		clientUrl = os.Getenv("TESTNET_NODE")
+func ConnectToChain(chainId string) (*ethclient.Client, error) {
+	infuraClientKey := map[string]string{
+		"1":      "https://mainnet.infura.io/v3/",
+		"3":      "https://ropsten.infura.io/v3/",
+		"137":    "https://polygon-mainnet.infura.io/v3/",
+		"10":     "https://optimism-mainnet.infura.io/v3/",
+		"421611": "https://arbitrum-rinkeby.infura.io/v3/",
+		"42161":  "https://arbitrum-mainnet.infura.io/v3/",
 	}
-	client, err := ethclient.Dial(clientUrl)
-
+	client, err := ethclient.Dial(infuraClientKey[chainId] + os.Getenv("INFURA_KEY"))
 	if err != nil {
 		log.Println(err.Error())
 	} else {
-		fmt.Println("=======================\n\nConnected to ethereum " + os.Getenv("MAINNET") +"\n\n=======================")
+		fmt.Printf("======\n\n Connected to %s\n\n======\n\n", infuraClientKey[chainId])
 	}
 	return client, err
 }
@@ -88,17 +89,17 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 	return account.Address.Hex(), nil
 }
 
-func LaunchContract(client *ethclient.Client, name string, ticker string, network string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
+func LaunchContract(client *ethclient.Client, name string, ticker string, network string) (common.Address, *types.Transaction, *creatortoken.CreatorToken, error) {
 	fmt.Printf("Launching contract %v (%v)\n\n", name, ticker)
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
 	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
 	hotWallet, err := keystore.DecryptKey(hotWalletBlob, hotWalletPass)
 
-	fmt.Println(network + "_ID:", os.Getenv(network+"_ID"))
+	fmt.Println(network+"_ID:", os.Getenv(network+"_ID"))
 	_check(err)
 	gasPrice, err := GetGasPrice(network)
 	_check(err)
-	CHAIN_ID, err := strconv.ParseInt(os.Getenv(network + "_ID"), 10, 64)
+	CHAIN_ID, err := strconv.ParseInt(os.Getenv(network+"_ID"), 10, 64)
 	txOptions, _ := bind.NewKeyedTransactorWithChainID(hotWallet.PrivateKey, big.NewInt(CHAIN_ID))
 	txOptions.Value = big.NewInt(0)      // in wei
 	txOptions.GasLimit = uint64(3000000) // in units
@@ -115,8 +116,8 @@ func LaunchContract(client *ethclient.Client, name string, ticker string, networ
 	if balance.Cmp(gasCost) == -1 {
 		return common.Address{}, nil, nil, errors.New("Not enough balance to launch contract")
 	}
-	
-	address, tx, token, err := contracts.DeployCreatorToken(txOptions, client, initialAmount, name, ticker)
+
+	address, tx, token, err := creatortoken.DeployCreatorToken(txOptions, client, initialAmount, name, ticker, hotWallet.Address)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err.Error())
 		return common.HexToAddress("0x0"), nil, nil, err
@@ -134,7 +135,7 @@ func GetGasPrice(network string) (int64, error) {
 		return 0, errors.New("invalid network")
 	}
 
-	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":` + os.Getenv(network+"_ID") +`}`)
+	payload := strings.NewReader(`{"jsonrpc":"2.0","method":"eth_gasPrice","params": [],"id":` + os.Getenv(network+"_ID") + `}`)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, payload)
