@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
-	creatortoken "valorize-app/contracts"
 	"valorize-app/creatortoken"
 	"valorize-app/models"
 	"valorize-app/services"
@@ -51,7 +50,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 	}
 
 	client, err := ethereum.ConnectToChain("1")
-	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	instance, err := creatortoken.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 
 	ownerTokenBalance, err := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(user.Token.OwnerAddress))
 	totalMinted, err := instance.TotalSupply(&bind.CallOpts{})
@@ -189,7 +188,7 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 	}
 
 	client, err := ethereum.ConnectToChain("1")
-	tokenInstance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	ethToCheckBig, ok := new(big.Int).SetString(etherToCheck, 10)
 
 	if !ok {
@@ -228,7 +227,7 @@ func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
 	}
 
 	client, err := ethereum.ConnectToChain("1")
-	instance, err := contracts.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
+	instance, err := creatortoken.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 	tokenToCheckBig, ok := new(big.Int).SetString(tokensToCheck, 10)
 	fmt.Printf("tokensToCheckBig: %s", tokenToCheckBig)
 	if !ok {
@@ -296,7 +295,7 @@ func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
 	}
 
 	client, err := ethereum.ConnectToChain("1")
-	instance, err := contracts.NewCreatorToken(common.HexToAddress(creatorToken.Address), client)
+	instance, err := creatortoken.NewCreatorToken(common.HexToAddress(creatorToken.Address), client)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token",
