@@ -8,7 +8,7 @@ import (
 
 type Token struct {
 	ID              uint       `json:"id" gorm:"primary_key"`
-	TokenType       string     `json:"token_type" gorm:"not null; type:enum('simple', 'creator'); default:'creator';"`
+	TokenType       string     `json:"token_type" gorm:"not null; type:enum('simple', 'creator', 'timed_mint'); default:'creator';"`
 	Name            string     `json:"name" gorm:"type:varchar(200);"`
 	Address         string     `json:"address" gorm:"type:varchar(200);"`
 	OwnerAddress    string     `json:"owner_address" gorm:"type:varchar(200);"`

@@ -12,7 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"valorize-app/contracts"
+	"valorize-app/creatortoken"
 	"valorize-app/models"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -89,7 +89,7 @@ func StoreUserKeystore(password string, userId uint, DB *gorm.DB) (string, error
 	return account.Address.Hex(), nil
 }
 
-func LaunchContract(client *ethclient.Client, name string, ticker string, network string) (common.Address, *types.Transaction, *contracts.CreatorToken, error) {
+func LaunchContract(client *ethclient.Client, name string, ticker string, network string) (common.Address, *types.Transaction, *creatortoken.CreatorToken, error) {
 	fmt.Printf("Launching contract %v (%v)\n\n", name, ticker)
 	hotWalletPass := os.Getenv("HOTWALLET_SECRET")
 	hotWalletBlob := []byte(os.Getenv("HOTWALLET_KEYSTORE"))
@@ -117,7 +117,7 @@ func LaunchContract(client *ethclient.Client, name string, ticker string, networ
 		return common.Address{}, nil, nil, errors.New("Not enough balance to launch contract")
 	}
 
-	address, tx, token, err := contracts.DeployCreatorToken(txOptions, client, initialAmount, name, ticker, hotWallet.Address)
+	address, tx, token, err := creatortoken.DeployCreatorToken(txOptions, client, initialAmount, name, ticker, hotWallet.Address)
 	if err != nil {
 		fmt.Printf("\nError: %v\n", err.Error())
 		return common.HexToAddress("0x0"), nil, nil, err

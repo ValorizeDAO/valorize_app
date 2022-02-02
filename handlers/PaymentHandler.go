@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"valorize-app/contracts"
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"

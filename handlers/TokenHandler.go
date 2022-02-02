@@ -6,11 +6,13 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
-	"valorize-app/contracts"
+	creatortoken "valorize-app/contracts"
+	"valorize-app/creatortoken"
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
 	"valorize-app/simpletoken"
+	timedmint "valorize-app/timedminttoken"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -64,20 +66,65 @@ func (token *TokenHandler) Show(c echo.Context) error {
 		},
 	})
 }
+func returnErr(err error) map[string]string {
+	return map[string]string{
+		"error": err.Error(),
+	}
+}
 
 func (token *TokenHandler) ShowToken(c echo.Context) error {
 	tokenId, err := strconv.Atoi(c.Param("id"))
 	tokenData, err := models.GetTokenById(uint64(tokenId), *token.server.DB)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": err.Error(),
-		})
+		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
 
 	client, err := ethereum.ConnectToChain(tokenData.ChainId)
-	instance, err := simpletoken.NewSimpleToken(common.HexToAddress(tokenData.Address), client)
+	var totalSupply *big.Int
+	var maxSupply *big.Int
 
-	totalSupply, err := instance.TotalSupply(&bind.CallOpts{})
+	switch tokenData.TokenType {
+	case "simple":
+		tokenInstance, err := simpletoken.NewSimpleToken(common.HexToAddress(tokenData.Address), client)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		totalSupply, err = tokenInstance.TotalSupply(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		maxSupply = totalSupply
+	case "timed_mint":
+		tokenInstance, err := timedmint.NewTimedMintToken(common.HexToAddress(tokenData.Address), client)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		totalSupply, err = tokenInstance.TotalSupply(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		maxSupply, err = tokenInstance.SupplyCap(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+	case "creator":
+		tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(tokenData.Address), client)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		totalSupply, err = tokenInstance.TotalSupply(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		maxSupply = big.NewInt(0)
+	}
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"name":            tokenData.Name,
@@ -89,6 +136,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		"contractVersion": tokenData.ContractVersion,
 		"chainId":         tokenData.ChainId,
 		"totalSupply":     totalSupply.String(),
+		"maxSupply":       maxSupply.String(),
 	})
 }
 
