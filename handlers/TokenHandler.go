@@ -140,8 +140,8 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 }
 
 type WalletInfo struct {
-	Address string
-	userId  string
+	Address string `json:"address"`
+	UserId  uint   `json:"user"`
 }
 
 func (token *TokenHandler) ShowTokenAdmins(c echo.Context) error {
@@ -159,10 +159,12 @@ func (token *TokenHandler) ShowTokenAdmins(c echo.Context) error {
 			})
 		}
 	}
-	//var wallets []WalletInfo
-	fmt.Println(t.AdminAddresses)
-	return c.JSON(http.StatusOK, map[string]string{
-		"administrators": "test",
+	var wallets []WalletInfo
+	for _, s := range t.AdminAddresses {
+		wallets = append(wallets, WalletInfo{s.Address, s.ID})
+	}
+	return c.JSON(http.StatusOK, map[string][]WalletInfo{
+		"administrators": wallets,
 	})
 }
 
