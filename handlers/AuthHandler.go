@@ -250,6 +250,11 @@ func (auth *AuthHandler) UpdateProfile(c echo.Context) error {
 	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
 }
 
+type updateTokenResponse struct {
+	TokenData    models.Token `json:"token"`
+	BadAddresses []string     `json:"bad_addresses"`
+}
+
 func (auth *AuthHandler) UpdateTokenData(c echo.Context) error {
 	user, err := services.AuthUser(c, *auth.server.DB)
 
@@ -275,10 +280,17 @@ func (auth *AuthHandler) UpdateTokenData(c echo.Context) error {
 
 	adminAccounts := []*models.Wallet{}
 	addresses := strings.Split(adminAddresses, ",")
+	var badAddresses []string
 	for i := range addresses {
+		address := strings.TrimSpace(addresses[i])
+		address = strings.Trim(address, "\"")
+		if !ethereum.CheckAddress(address) {
+			badAddresses = append(badAddresses, address)
+			continue
+		}
 		wallet := models.Wallet{}
 
-		auth.server.DB.FirstOrCreate(&wallet, models.Wallet{Address: addresses[i]})
+		auth.server.DB.FirstOrCreate(&wallet, models.Wallet{Address: address})
 		fmt.Printf("==================\n\n\n\nid: %v  wallet: %v \n\n\n\n========================", wallet.ID, wallet.Address)
 		adminAccounts = append(adminAccounts, &wallet)
 	}
@@ -305,13 +317,15 @@ func (auth *AuthHandler) UpdateTokenData(c echo.Context) error {
 
 	user.HasDeployedToken = true
 	err = auth.server.DB.Save(&user).Error
-	tokenStruct, err := json.Marshal(token)
-
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "could not update user info: " + err.Error(),
 		})
 	}
+	response := updateTokenResponse{
+		token, badAddresses,
+	}
+	tokenStruct, err := json.Marshal(response)
 
 	return c.JSON(http.StatusOK, json.RawMessage(tokenStruct))
 }
