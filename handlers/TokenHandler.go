@@ -96,6 +96,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 
+		maxSupply = totalSupply
 	case "timed_mint":
 		tokenInstance, err := timedmint.NewTimedMintToken(common.HexToAddress(tokenData.Address), client)
 		if err != nil {

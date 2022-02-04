@@ -272,7 +272,7 @@ func (auth *AuthHandler) UpdateTokenData(c echo.Context) error {
 	chainId := c.FormValue("chainId")
 	txHash := c.FormValue("txHash")
 	contractAddress := c.FormValue("contractAddress")
-	if tokenType != "simple" {
+	if !(tokenType == "simple" || tokenType == "timed_mint") {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "error, invalid token type parameter",
 		})
