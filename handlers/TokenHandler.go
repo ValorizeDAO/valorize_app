@@ -83,6 +83,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 	mintAllowance := big.NewInt(0)
 	nextAllowedMint := big.NewInt(0)
 	maxSupply := big.NewInt(0)
+	minter := ""
 
 	switch tokenData.TokenType {
 	case "simple":
@@ -122,6 +123,12 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
+
+		minterAddress, err := tokenInstance.Minter(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		minter = minterAddress.String()
 	case "creator":
 		tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(tokenData.Address), client)
 		if err != nil {
@@ -148,6 +155,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		"maxSupply":         maxSupply.String(),
 		"nextMintAllowance": mintAllowance.String(),
 		"nextAllowedMint":   nextAllowedMint.String(),
+		"minter":            minter,
 	})
 }
 
