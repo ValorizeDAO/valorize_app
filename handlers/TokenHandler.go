@@ -80,7 +80,10 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 
 	client, err := ethereum.ConnectToChain(tokenData.ChainId)
 	var totalSupply *big.Int
-	var maxSupply *big.Int
+	mintAllowance := big.NewInt(0)
+	nextAllowedMint := big.NewInt(0)
+	maxSupply := big.NewInt(0)
+	minter := ""
 
 	switch tokenData.TokenType {
 	case "simple":
@@ -111,6 +114,21 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 
+		mintAllowance, err = tokenInstance.MintCap(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		nextAllowedMint, err = tokenInstance.NextAllowedMintTime(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		minterAddress, err := tokenInstance.Minter(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		minter = minterAddress.String()
 	case "creator":
 		tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(tokenData.Address), client)
 		if err != nil {
@@ -122,20 +140,22 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 
-		maxSupply = big.NewInt(0)
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{
-		"name":            tokenData.Name,
-		"symbol":          tokenData.Symbol,
-		"address":         tokenData.Address,
-		"ownerAddress":    tokenData.OwnerAddress,
-		"vaultAddress":    tokenData.VaultAddress,
-		"tokenType":       tokenData.TokenType,
-		"contractVersion": tokenData.ContractVersion,
-		"chainId":         tokenData.ChainId,
-		"totalSupply":     totalSupply.String(),
-		"maxSupply":       maxSupply.String(),
+		"name":              tokenData.Name,
+		"symbol":            tokenData.Symbol,
+		"address":           tokenData.Address,
+		"ownerAddress":      tokenData.OwnerAddress,
+		"vaultAddress":      tokenData.VaultAddress,
+		"tokenType":         tokenData.TokenType,
+		"contractVersion":   tokenData.ContractVersion,
+		"chainId":           tokenData.ChainId,
+		"totalSupply":       totalSupply.String(),
+		"maxSupply":         maxSupply.String(),
+		"nextMintAllowance": mintAllowance.String(),
+		"nextAllowedMint":   nextAllowedMint.String(),
+		"minter":            minter,
 	})
 }
 
