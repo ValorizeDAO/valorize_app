@@ -20,7 +20,7 @@ func main() {
 	tkn, err := NewToken(database, userIndex)
 	if err == nil {
 		fmt.Print("Token Seeded", tkn.Address)
-	} 
+	}
 
 }
 
@@ -39,7 +39,7 @@ func NewToken(db *gorm.DB, i string) (models.Token, error) {
 		ContractVersion: "v@next",
 		Name:            "NewCoin",
 		Symbol:          "NU",
-		Network:         "MAINNET",
+		ChainId:         "1",
 		OwnerAddress:    "0x810aafa05789dd461f81b22de31a2b21b2fbe3be",
 		Address:         address.String(),
 		TxHash:          tx.Hash().String(),
@@ -50,5 +50,3 @@ func NewToken(db *gorm.DB, i string) (models.Token, error) {
 	}
 	return creatorToken, err
 }
-
-
