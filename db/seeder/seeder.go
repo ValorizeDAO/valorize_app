@@ -1,9 +1,7 @@
-package main
+package seeder
 
 import (
 	"fmt"
-	"valorize-app/config"
-	"valorize-app/db"
 	"valorize-app/models"
 	"valorize-app/services/ethereum"
 
@@ -12,9 +10,7 @@ import (
 )
 
 func main() {
-	cfg := config.NewConfig()
-	database := db.Init(cfg)
-	err := RunSeeder(database)
+	err = RunSeeder(database)
 	if err == nil {
 		print("seeding did run successfully")
 	} else {
@@ -30,7 +26,7 @@ func RunSeeder(db *gorm.DB) error {
 		ContractVersion: "v0.0.1",
 		Name:            "JAVICoin",
 		Symbol:          "JABA",
-		ChainId:         "1",
+		Network:         "MAINNET",
 		OwnerAddress:    "0x810aafa05789dd461f81b22de31a2b21b2fbe3be",
 		Address:         "0x05F3074138b9bfAbe8ADf0f68f2AA33047a8192e",
 		TxHash:          "0xb57e816e5ca3c68d7d9d7522380318e8fde8dd320a247ac15997c3cb0956553f",
