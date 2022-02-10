@@ -293,6 +293,33 @@ func (token *TokenHandler) GetGasPriceToLaunchToken(c echo.Context) error {
 	})
 }
 
+type airdropRaw struct {
+	Payload [][]string `json:"payload"`
+}
+
+var a airdropRaw
+
+func (token *TokenHandler) NewAirdrop(c echo.Context) error {
+	tokenId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	if err := c.Bind(&a); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	models.NewAirdropClaim(*token.server.DB, a.Payload, tokenId, 1)
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"status": "ok",
+	})
+}
+
 func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
 	user, _ := services.AuthUser(c, *token.server.DB)
 

@@ -56,6 +56,15 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					Error; err != nil {
 					return err
 				}
+				if err := tx.AutoMigrate(&models.AirdropClaim{}).
+					AddForeignKey("token_id", "tokens(id)", "CASCADE", "CASCADE").
+					Error; err != nil {
+					return err
+				}
+				database.Exec("ALTER TABLE airdrop_claims MODIFY COLUMN claimed tinyint(1) DEFAULT 0 NULL;")
+				database.Exec("ALTER TABLE airdrop_claims CHANGE claim_amount claim_amount varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NUL;")
+				database.Exec("ALTER TABLE airdrop_claims CHANGE address wallet_address  varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL;")
+
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -69,6 +78,9 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					return nil
 				}
 				if err := tx.DropTable("links").Error; err != nil {
+					return nil
+				}
+				if err := tx.DropTable("airdrop_claims").Error; err != nil {
 					return nil
 				}
 				return nil
