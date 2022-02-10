@@ -8,11 +8,20 @@ import (
 )
 
 type AirdropClaim struct {
-	TokenId       uint   `json:"token_id"`
-	WalletAddress string `json:"wallet_address"`
-	ClaimAmount   string `json:"claim_amount"`
-	AirdropId     uint   `json:"airdrop_id"`
-	Claimed       bool   `json:"claimed"; gorm:"not null"; default:0;`
+	WalletAddress string  `json:"wallet_address"`
+	ClaimAmount   string  `json:"claim_amount"`
+	AirdropID     uint    `json:"airdrop_id"`
+	Airdrop       Airdrop `json:"airdrop"`
+	Claimed       bool    `json:"claimed" gorm:"default:0;"`
+}
+
+type Airdrop struct {
+	ID            uint   `json:"id" gorm:"primary_key"`
+	TokenID       uint   `json:"token_id"`
+	MerkleRoot    string `json:"merkle_root"`
+	RawMerkleTree string `json:"raw_merkle_tree"`
+	FinishTime    uint   `json:"finish_time" gorm:"type:not null;"`
+	Complete      bool   `json:"complete" gorm:"type:not null;default:0;"`
 }
 
 func NewAirdropClaim(db gorm.DB, claimInfo [][]string, tokenId int, airdropId uint) error {
@@ -38,14 +47,13 @@ func NewAirdropClaim(db gorm.DB, claimInfo [][]string, tokenId int, airdropId ui
 		valueStrings := []string{}
 		valueArgs := []interface{}{}
 		for _, claim := range divided[len(divided)-1] {
-			valueStrings = append(valueStrings, "(?, ?, ?, ?)")
-			valueArgs = append(valueArgs, tokenId)
+			valueStrings = append(valueStrings, "(?, ?, ?)")
 			valueArgs = append(valueArgs, claim[0])
 			valueArgs = append(valueArgs, claim[1])
 			valueArgs = append(valueArgs, airdropId)
 		}
 
-		stmt := fmt.Sprintf("INSERT INTO airdrop_claims (token_id, wallet_address, claim_amount, airdrop_id) VALUES %s", strings.Join(valueStrings, ","))
+		stmt := fmt.Sprintf("INSERT INTO airdrop_claims (wallet_address, claim_amount, airdrop_id) VALUES %s", strings.Join(valueStrings, ","))
 		err := tx.Exec(stmt, valueArgs...).Error
 		if err != nil {
 			tx.Rollback()
