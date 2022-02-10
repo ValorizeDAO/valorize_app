@@ -56,11 +56,6 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					Error; err != nil {
 					return err
 				}
-				if err := tx.AutoMigrate(&models.AirdropClaim{}).
-					AddForeignKey("token_id", "tokens(id)", "CASCADE", "CASCADE").
-					Error; err != nil {
-					return err
-				}
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -74,9 +69,6 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					return nil
 				}
 				if err := tx.DropTable("links").Error; err != nil {
-					return nil
-				}
-				if err := tx.DropTable("airdrop_claims").Error; err != nil {
 					return nil
 				}
 				return nil
