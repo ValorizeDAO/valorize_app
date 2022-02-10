@@ -8,11 +8,14 @@ import (
 
 type Token struct {
 	ID              uint       `json:"id" gorm:"primary_key"`
+	TokenType       string     `json:"token_type" gorm:"not null; type:enum('simple', 'creator', 'timed_mint'); default:'creator';"`
 	Name            string     `json:"name" gorm:"type:varchar(200);"`
 	Address         string     `json:"address" gorm:"type:varchar(200);"`
 	OwnerAddress    string     `json:"owner_address" gorm:"type:varchar(200);"`
+	VaultAddress    string     `json:"vault_address" gorm:"type:varchar(200);"`
+	AdminAddresses  []*Wallet  `json:"administrated_by" gorm:"type:varchar(200); many2many:token_wallet;"`
 	Symbol          string     `json:"symbol" gorm:"type:varchar(200);"`
-	Network         string     `json:"network" gorm:"type:varchar(200);"`
+	ChainId         string     `json:"chain_id" gorm:"type:varchar(200);"`
 	ContractVersion string     `json:"contract_version" gorm:"type:varchar(200);"`
 	TxHash          string     `json:"tx_hash" gorm:"type:varchar(200);"`
 	UserId          uint       `json:"user_id"`
@@ -26,23 +29,28 @@ type TokenResponse struct {
 	Name            string `json:"name"`
 	Address         string `json:"address"`
 	OwnerAddress    string `json:"owner_address"`
+	VaultAddress    string `json:"vault_address"`
 	Symbol          string `json:"symbol"`
-	Network         string `json:"network"`
 	ContractVersion string `json:"contract_version"`
-	UserId          uint   `json:"user_id"`
 	TxHash          string `json:"tx_hash"`
+	UserId          uint   `json:"user_id"`
+	ChainId         string `json:"chain_id"`
+	TokenType       string `json:"token_type"`
 }
 
-func GetTokenResponse(creatorToken *Token) TokenResponse {
+func GetTokenResponse(token *Token) TokenResponse {
 	return TokenResponse{
-		ID:              creatorToken.ID,
-		Name:            creatorToken.Name,
-		Address:         creatorToken.Address,
-		OwnerAddress:    creatorToken.OwnerAddress,
-		Symbol:          creatorToken.Symbol,
-		Network:         creatorToken.Network,
-		ContractVersion: creatorToken.ContractVersion,
-		UserId:          creatorToken.UserId,
+		ID:              token.ID,
+		Name:            token.Name,
+		Address:         token.Address,
+		OwnerAddress:    token.OwnerAddress,
+		VaultAddress:    token.VaultAddress,
+		Symbol:          token.Symbol,
+		ContractVersion: token.ContractVersion,
+		TxHash:          token.TxHash,
+		UserId:          token.UserId,
+		ChainId:         token.ChainId,
+		TokenType:       token.TokenType,
 	}
 }
 

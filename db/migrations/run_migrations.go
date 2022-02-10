@@ -1,11 +1,11 @@
 package main
 
 import (
+	"flag"
 	"strconv"
 	"time"
 	"valorize-app/config"
 	"valorize-app/db"
-	"valorize-app/db/seeder"
 	"valorize-app/models"
 
 	"github.com/jinzhu/gorm"
@@ -15,20 +15,22 @@ import (
 func main() {
 	cfg := config.NewConfig()
 	database := db.Init(cfg)
+
+	drop := flag.String("d", "none", "drop token_type column")
+	flag.Parse()
 	m := GetMigrations(database)
+
+	if *drop == "token_type" {
+		database.Exec("ALTER TABLE tokens DROP COLUMN token_type;")
+	}
+
 	err := m.Migrate()
+
 	if err == nil {
-		print("Migrations did run successfully, seeding now")
+		print("Migrations did run successfully")
 	} else {
 		print("migrations failed.", err)
 	}
-	err = seeder.RunSeeder(database)
-	if err == nil {
-		print("seeding did run successfully")
-	} else {
-		print("seeding failed.", err)
-	}
-
 }
 func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 	timeNow := strconv.FormatUint(uint64(time.Now().Unix()), 10)
@@ -74,4 +76,3 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 		},
 	})
 }
-

@@ -2,11 +2,21 @@ package seeder
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"golang.org/x/crypto/bcrypt"
 	"valorize-app/models"
 	"valorize-app/services/ethereum"
+
+	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 )
+
+func main() {
+	err = RunSeeder(database)
+	if err == nil {
+		print("seeding did run successfully")
+	} else {
+		print("seeding failed.", err)
+	}
+}
 
 func RunSeeder(db *gorm.DB) error {
 	user, err := UserSeeder(db, "javier123454321", "test@test.com", "test", true)

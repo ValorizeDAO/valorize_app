@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -94,11 +95,11 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 	hash, _ := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if stringsUtil.StringInSlice(username, []string{
 		"admin",
-		"root", 
-		"register", 
-		"login", 
-		"edit-profile", 
-		"dashboard", 
+		"root",
+		"register",
+		"login",
+		"edit-profile",
+		"dashboard",
 		"logout",
 	}) {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -249,15 +250,95 @@ func (auth *AuthHandler) UpdateProfile(c echo.Context) error {
 	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
 }
 
+type updateTokenResponse struct {
+	TokenData    models.Token `json:"token"`
+	BadAddresses []string     `json:"bad_addresses"`
+}
+
+func (auth *AuthHandler) UpdateTokenData(c echo.Context) error {
+	user, err := services.AuthUser(c, *auth.server.DB)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not find logged in user",
+		})
+	}
+	tokenType := c.FormValue("tokenType")
+	contractVersion := c.FormValue("contractVersion")
+	vaultAddress := c.FormValue("vaultAddress")
+	tokenName := c.FormValue("tokenName")
+	tokenTicker := c.FormValue("tokenTicker")
+	adminAddresses := c.FormValue("adminAddresses")
+	chainId := c.FormValue("chainId")
+	txHash := c.FormValue("txHash")
+	contractAddress := c.FormValue("contractAddress")
+	if !(tokenType == "simple" || tokenType == "timed_mint") {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "error, invalid token type parameter",
+		})
+	}
+
+	adminAccounts := []*models.Wallet{}
+	addresses := strings.Split(adminAddresses, ",")
+	var badAddresses []string
+	for i := range addresses {
+		address := strings.TrimSpace(addresses[i])
+		address = strings.Trim(address, "\"")
+		if !ethereum.CheckAddress(address) {
+			badAddresses = append(badAddresses, address)
+			continue
+		}
+		wallet := models.Wallet{}
+
+		auth.server.DB.FirstOrCreate(&wallet, models.Wallet{Address: address})
+		fmt.Printf("==================\n\n\n\nid: %v  wallet: %v \n\n\n\n========================", wallet.ID, wallet.Address)
+		adminAccounts = append(adminAccounts, &wallet)
+	}
+
+	token := models.Token{
+		UserId:          user.ID,
+		TokenType:       tokenType,
+		ContractVersion: contractVersion,
+		Name:            tokenName,
+		Symbol:          tokenTicker,
+		ChainId:         chainId,
+		VaultAddress:    vaultAddress,
+		AdminAddresses:  adminAccounts,
+		Address:         contractAddress,
+		TxHash:          txHash,
+	}
+
+	err = auth.server.DB.Create(&token).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not store contract information: " + err.Error(),
+		})
+	}
+
+	user.HasDeployedToken = true
+	err = auth.server.DB.Save(&user).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not update user info: " + err.Error(),
+		})
+	}
+	response := updateTokenResponse{
+		token, badAddresses,
+	}
+	tokenStruct, err := json.Marshal(response)
+
+	return c.JSON(http.StatusOK, json.RawMessage(tokenStruct))
+}
+
 type response struct {
-	Success bool 		`json:"success"`
-	Links []models.Link `json:"links"`
+	Success bool          `json:"success"`
+	Links   []models.Link `json:"links"`
 }
 
 var jsonRequest map[string][]models.Link
 
 func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
-	
+
 	if err := c.Bind(&jsonRequest); err != nil {
 		return err
 	}
@@ -277,7 +358,6 @@ func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
 			"error": "could not get user links",
 		})
 	}
-	
 
 	addedLinks := []models.Link{}
 	for _, link := range links {
@@ -301,7 +381,7 @@ func (auth *AuthHandler) UpdateLinks(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, response{
 		Success: true,
-		Links: addedLinks,
+		Links:   addedLinks,
 	})
 }
 
@@ -339,9 +419,11 @@ func (auth *AuthHandler) DeleteLinks(c echo.Context) error {
 			"error": "could not find user links",
 		})
 	}
-		
+
 	for _, link := range links {
-		if link.ID != uint(linkIdInt) { continue } //boolean gate to check if link is associated with user
+		if link.ID != uint(linkIdInt) {
+			continue
+		} //boolean gate to check if link is associated with user
 		err = models.DeleteLink(link, *auth.server.DB)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{
