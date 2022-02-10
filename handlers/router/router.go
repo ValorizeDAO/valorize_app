@@ -61,7 +61,6 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	me.GET("/wallets", wallet.Index)
 	myTokens := me.Group("/tokens")
 	myTokens.GET("/:id/balance", token.GetCoinBalanceForAuthUser)
-	myTokens.PUT("/:id/airdrop/create", token.NewAirdrop)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
