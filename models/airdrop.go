@@ -7,28 +7,26 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+type Airdrop struct {
+	ID            uint   `json:"id" gorm:"primary_key"`
+	TokenID       uint   `json:"token_id"`
+	MerkleRoot    string `json:"merkle_root"`
+	RawMerkleTree string `json:"raw_merkle_tree" gorm:"type:longtext;"`
+	FinishTime    uint   `json:"finish_time" gorm:"not null"`
+	Complete      bool   `json:"complete" gorm:"not null" sql:"DEFAULT:0"`
+}
+
 type AirdropClaim struct {
 	WalletAddress string  `json:"wallet_address"`
 	ClaimAmount   string  `json:"claim_amount"`
 	AirdropID     uint    `json:"airdrop_id"`
 	Airdrop       Airdrop `json:"airdrop"`
-	Claimed       bool    `json:"claimed" gorm:"default:0;"`
-}
-
-type Airdrop struct {
-	ID            uint   `json:"id" gorm:"primary_key"`
-	TokenID       uint   `json:"token_id"`
-	MerkleRoot    string `json:"merkle_root"`
-	RawMerkleTree string `json:"raw_merkle_tree"`
-	FinishTime    uint   `json:"finish_time" gorm:"type:not null;"`
-	Complete      bool   `json:"complete" gorm:"type:not null;default:0;"`
+	Claimed       bool    `json:"claimed" gorm:"not null" sql:"DEFAULT:0"`
 }
 
 func NewAirdropClaim(db gorm.DB, claimInfo [][]string, tokenId int, airdropId uint) error {
-	var chunkSize int
-	if len(claimInfo) >= 100 {
-		chunkSize = 100
-	} else {
+	chunkSize := 150
+	if len(claimInfo) < chunkSize {
 		chunkSize = len(claimInfo)
 	}
 	tx := db.Begin()
