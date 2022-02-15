@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+	"valorize-app/services/merkler"
 	"valorize-app/simpletoken"
 	timedmint "valorize-app/timedminttoken"
 
@@ -312,11 +314,31 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 			"error": err.Error(),
 		})
 	}
+	// step 1 validate the data incoming to make sure it matches the expected merkle root
+	// step 2 if it is valid, save individual nodes in the DB using NewAirdropClaim
+	// step 3 if successful, return merkle root to client for uploading to smart contract.
+	// should we have a smartcontract that does this automatically from our backends? violates the admin role principles we have
+	// There is no guarantee that the merkle root will match in this case
+	// Maybe we need a is confirmed on chain status that matches the merkleroot of the contract with the airdropId that is expected?
 
-	models.NewAirdropClaim(*token.server.DB, a.Payload, tokenId, 1)
+	calculatedMerkleRoot := merkler.GenerateAirdropMerkleRoot(a.Payload)
+	fmt.Printf("\n\n\n\n %v %v \n\n\n\n\n\n", string(calculatedMerkleRoot), tokenId)
+	//	airdropstruct := models.Airdrop{
+	//		TokenID:    uint(tokenId),
+	//		MerkleRoot: calculatedMerkleRoot,
+	//	}
+	//
+	//	airdrop, err := models.NewAirdrop(*token.server.DB)
+	//	if err != nil {
+	//		return c.JSON(http.StatusNotFound, map[string]string{
+	//			"error": err.Error(),
+	//		})
+	//	}
+	//	models.NewAirdropClaim(*token.server.DB, a.Payload, tokenId, 1)
 
 	return c.JSON(http.StatusOK, map[string]string{
-		"status": "ok",
+		"status":     "ok",
+		"merkleRoot": hex.EncodeToString(calculatedMerkleRoot),
 	})
 }
 
