@@ -321,8 +321,8 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 	// There is no guarantee that the merkle root will match in this case
 	// Maybe we need a is confirmed on chain status that matches the merkleroot of the contract with the airdropId that is expected?
 
-	calculatedMerkleRoot := merkler.GenerateAirdropMerkleRoot(a.Payload)
-	fmt.Printf("\n\n\n\n %v %v \n\n\n\n\n\n", string(calculatedMerkleRoot), tokenId)
+	calculatedMerkleRoot, err := merkler.GenerateAirdropMerkleRoot(a.Payload)
+	fmt.Printf("\n %v %v \n", hex.EncodeToString(calculatedMerkleRoot), tokenId)
 	//	airdropstruct := models.Airdrop{
 	//		TokenID:    uint(tokenId),
 	//		MerkleRoot: calculatedMerkleRoot,
