@@ -9,17 +9,15 @@ import (
 	"valorize-app/services/ethereum"
 
 	"github.com/cbergoon/merkletree"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	solsha3 "github.com/miguelmota/go-solidity-sha3"
 )
 
 type ContentData struct {
-	ByteArray []byte
+	data []byte
 }
 
 func (c ContentData) CalculateHash() ([]byte, error) {
-	return crypto.Keccak256(c.ByteArray), nil
+	return solsha3.SoliditySHA3(solsha3.Bytes1(c.data)), nil
 }
 
 func (c ContentData) Equals(other merkletree.Content) (bool, error) {
@@ -29,36 +27,33 @@ func (c ContentData) Equals(other merkletree.Content) (bool, error) {
 }
 
 func GenerateAirdropMerkleRoot(addressToClaimAmountMap [][]string) ([]byte, error) {
-	var leaves []merkletree.Content
-	for i := 0; i < len(addressToClaimAmountMap)-1; i++ {
+
+	var leaves [][]byte
+	for i := 0; i < len(addressToClaimAmountMap); i++ {
 		address := addressToClaimAmountMap[i][0]
 		claimString := addressToClaimAmountMap[i][1]
 		claimAmount, ok := new(big.Int).SetString(claimString, 10)
 		if !ok || !ethereum.CheckAddress(address) {
 			return []byte(""), errors.New("invalid value in input for address: " + address + ", claimAmount: " + claimString + "in index: " + strconv.Itoa(i))
 		}
-		addressType, _ := abi.NewType("address", "", nil)
-		uintType, _ := abi.NewType("uint256", "", nil)
-		arguments := abi.Arguments{
-			{
-				Type: addressType,
-			},
-			{
-				Type: uintType,
-			},
-		}
 
-		bytes, _ := arguments.Pack(
-			common.HexToAddress(address),
-			claimAmount,
+		hash := solsha3.SoliditySHA3(
+			solsha3.Address(address),
+			solsha3.Uint256(claimAmount),
 		)
 
-		leaves = append(
-			leaves, ContentData{bytes},
-		)
-		fmt.Printf("\n0x%v", hex.EncodeToString(crypto.Keccak256(bytes)))
+		leaves = append(leaves, hash)
+		
+		fmt.Printf("0x%v\n", hex.EncodeToString(hash))
 	}
-	t, err := merkletree.NewTree(leaves)
+	// sort.Slice(leaves, func(i, j int) bool {
+	// 	return bytes.Compare(leaves[i], leaves[j]) < 0
+	// })
+	var contents []merkletree.Content
+	for i := 0; i < len(leaves); i++ {
+		contents = append(contents, ContentData{leaves[i]})
+	}
+	t, err := merkletree.NewTree(contents)
 	if err != nil {
 		return []byte(""), err
 	}
