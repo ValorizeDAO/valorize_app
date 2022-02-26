@@ -13,7 +13,7 @@ type User struct {
 	HasDeployedToken bool     `json:"has_deployed_token gorm:boolean"`
 	HasVerifiedEmail bool     `json:"has_verified_email gorm:boolean"`
 	IsAlphaUser      bool     `json:"is_alpha_user gorm:boolean"`
-	Token            []Token  `json:"token" gorm:"ForeignKey:UserId;AssociationForeignKey:ID"`
+	Token            Token    `json:"token" gorm:"ForeignKey:UserId;AssociationForeignKey:ID"`
 	Wallets          []Wallet `json:"wallets" gorm:"ForeignKey:userId;AssociationForeignKey:user_id"`
 	Links            []Link   `json:"links" gorm:"ForeignKey:userId;AssociationForeignKey:user_id"`
 }
