@@ -13,21 +13,6 @@ import (
 	solsha3 "github.com/miguelmota/go-solidity-sha3"
 )
 
-type ContentData struct {
-	data []byte
-}
-
-// func (c ContentData) CalculateHash() ([]byte, error) {
-// 	return crypto.Keccak256(solsha3.Bytes32(c.data)), nil
-// }
-
-// func (c ContentData) Equals(other merkletree.Content) (bool, error) {
-// 	otherHash, _ := other.CalculateHash()
-// 	thisHash, _ := c.CalculateHash()
-// 	return hex.EncodeToString(thisHash) == hex.EncodeToString(otherHash), nil
-// }
-
-
 type Node struct {
 	Left 		Hashable
 	Right 		Hashable
@@ -43,7 +28,6 @@ type BaseHashable struct {
 }
 
 func (base BaseHashable) Hash() []byte {
-	fmt.Println("Hashing base bytes")
 	return solsha3.SoliditySHA3(
 	   solsha3.Bytes32(base.BaseBytes),
    )
@@ -68,14 +52,13 @@ type Hashable interface {
 }
 
 func (n Node) Hash() []byte {
+	sliceToHash := [][]byte{n.LeftBytes, n.RightBytes}
+	sort.SliceStable(sliceToHash, func(i, j int) bool {
+		return bytes.Compare(sliceToHash[i], sliceToHash[j]) <= 0
+	})
 	hash := solsha3.SoliditySHA3(
-		solsha3.Bytes32(n.LeftBytes),
-		solsha3.Bytes32(n.RightBytes),
-	)
-	fmt.Printf("\n==\nnode(inside Hash()): \nleft: %v\nright %v\n hash: %v\n==\n", 
-		hex.EncodeToString(n.LeftBytes), 
-		hex.EncodeToString(n.RightBytes), 
-		hex.EncodeToString(hash),
+		solsha3.Bytes32(sliceToHash[0]),
+		solsha3.Bytes32(sliceToHash[1]),
 	)
  	return hash
 }
@@ -104,7 +87,11 @@ func GenerateAirdropMerkleRoot(addressToClaimAmountMap [][]string) ([]byte, erro
 }
 
 func NewMerkleTree(leaves []Leaf) error {
-	_ = turnLeavesIntoNodes(leaves)
+	nodes := turnLeavesIntoNodes(leaves)
+	tree := makeTree(nodes)
+	for i := 0; i < len(tree); i++ {
+		fmt.Println("\n==\nTree: \n", tree[i], "\n==")
+	}
 	return nil
 }
 
@@ -125,22 +112,35 @@ func turnLeavesIntoNodes(leaves []Leaf) []Node {
 	return nodes
 }
 
-
-// func makeTree(base []Hashable) []Hashable {
-// 	var nodes []Hashable
-// 	for i := 0; i < len(base); i = i + 2 {
-// 		if i + 1 < len(base) {
-// 			nodes = append(nodes, Node{Left: base[i], Right: base[i+1]})
-// 		} else {
-// 			nodes = append(nodes, Node{Left: base[i], Right: EmptyNode{}})
-// 		}
-// 		sort.SliceStable(nodes, func(i, j int) bool {
-// 			return bytes.Compare(nodes[i].Hash(), nodes[j].Hash()) < 0
-// 		})
-// 	}
-// 	if len(nodes) == 1 {
-// 		return nodes
-// 	} else {
-// 		return makeTree(nodes)
-// 	}
-// }
+func makeTree(base []Node) []Node {
+	var nodes []Node
+	for i := 0; i < len(base); i = i + 2 {
+		if i + 1 < len(base) {
+			node := Node{Left: base[i], LeftBytes: base[i].Hash(), Right: base[i+1], RightBytes: base[i+1].Hash()}
+			nodes = append(nodes, node)
+			fmt.Printf(
+				"%v\n==\nNode: \nleft: %v\nright %v\nhash: %v\n==\n",
+				i,
+				hex.EncodeToString(base[i].Hash()),
+				hex.EncodeToString(base[i+1].Hash()),
+				hex.EncodeToString(node.Hash()),
+			)
+		} else {
+			node := Node{Left: base[i], LeftBytes: base[i].Hash(), Right:  EmptyNode{}}
+			nodes = append(nodes, node)
+			fmt.Printf(
+				"\n==\nNode: \nleft: %v\nright: null\nhash: %v\n==\n",
+				hex.EncodeToString(base[i].Hash()),
+				hex.EncodeToString(node.Hash()),
+			)
+		}
+		sort.SliceStable(nodes, func(i, j int) bool {
+			return bytes.Compare(nodes[i].Hash(), nodes[j].Hash()) > 0
+		})
+	}
+	if len(nodes) == 1 {
+		return nodes
+	} else {
+		return makeTree(nodes)
+	}
+}
