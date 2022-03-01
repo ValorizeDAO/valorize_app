@@ -12,8 +12,7 @@ type Airdrop struct {
 	TokenID   		uint   	`json:"token_id"`
 	MerkleRoot 		string 	`json:"merkle_root"`
 	RawData    		string 	`json:"raw_data" gorm:"type:longtext"`
-	AirdropChainId 	uint 	`json:"airdrop_onchain_id"` //The contract has an index which is stored in this field
-	 	uint 	`json:"airdrop_onchain_id"` //The contract has an index which is stored in this field
+	OnChainIndex	uint 	`json:"onchain_index"` //The contract has an index which is stored in this field
 }
 
 type AirdropClaim struct {
