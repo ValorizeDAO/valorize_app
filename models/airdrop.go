@@ -12,7 +12,8 @@ type Airdrop struct {
 	TokenID   		uint   	`json:"token_id"`
 	MerkleRoot 		string 	`json:"merkle_root"`
 	RawData    		string 	`json:"raw_data" gorm:"type:longtext"`
-	AirdropChainId 	uint 	`json:"airdrop_chain_id"` //The contract has an index which is stored in this field
+	AirdropChainId 	uint 	`json:"airdrop_onchain_id"` //The contract has an index which is stored in this field
+	 	uint 	`json:"airdrop_onchain_id"` //The contract has an index which is stored in this field
 }
 
 type AirdropClaim struct {
@@ -30,7 +31,7 @@ func NewAirdrop(db gorm.DB, drop Airdrop) (Airdrop, error) {
 	return drop, nil
 }
 
-func NewAirdropClaim(db gorm.DB, claimInfo [][]string, tokenId int, airdropId uint) error {
+func NewAirdropClaim(db gorm.DB, claimInfo [][]string, airdropId uint) error {
 	chunkSize := 150
 	if len(claimInfo) < chunkSize {
 		chunkSize = len(claimInfo)
