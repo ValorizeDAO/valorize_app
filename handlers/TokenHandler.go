@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -73,6 +74,37 @@ func returnErr(err error) map[string]string {
 	}
 }
 
+type AirdropInfo struct {
+	Root [32]byte;
+	ClaimPeriodEnds *big.Int;
+	IsComplete bool;
+}
+
+type AirdropInfoResponse struct {
+	AirdropIndex    *big.Int;
+	RootHash		string;
+	ClaimPeriodEnds *big.Int;
+	IsComplete 		bool;
+}
+
+type TokenApiResponse struct {
+	Name				string 	`json:"name"`;
+	Symbol				string 	`json:"symbol"`;
+	Address				string 	`json:"address"`;
+	OwnerAddress		string 	`json:"ownerAddress"`;
+	VaultAddress		string 	`json:"vaultAddress"`;
+	TokenType			string 	`json:"tokenType"`;
+	ContractVersion		string 	`json:"contractVersion"`;
+	ChainId				string 	`json:"chainId"`;
+	TotalSupply			string 	`json:"totalSupply"`;
+	MaxSupply			string 	`json:"maxSupply"`;
+	NextMintAllowance	string 	`json:"nextMintAllowance"`;
+	NextAllowedMint		string	`json:"nextAllowedMint"`;
+	Minter				string 	`json:"minter"`;
+	AirdropSupply		string 	`json:"airdropSupply"`;
+	Airdrop				AirdropInfoResponse `json:"airdropInfo"`;
+}
+
 func (token *TokenHandler) ShowToken(c echo.Context) error {
 	tokenId, err := strconv.Atoi(c.Param("id"))
 	tokenData, err := models.GetTokenById(uint64(tokenId), *token.server.DB)
@@ -84,7 +116,10 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 	var totalSupply *big.Int
 	mintAllowance := big.NewInt(0)
 	nextAllowedMint := big.NewInt(0)
+	airdropSupply := big.NewInt(0)
 	maxSupply := big.NewInt(0)
+	airdropInfo := AirdropInfo{}
+	airdropResponse := AirdropInfoResponse{}
 	minter := ""
 
 	switch tokenData.TokenType {
@@ -100,6 +135,24 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		}
 
 		maxSupply = totalSupply
+
+		airdropSupply, err = tokenInstance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(tokenData.Address))
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		
+		airdropIndex, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex.Sub(airdropIndex, big.NewInt(1)))
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		airdropResponse.AirdropIndex = airdropIndex
+		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
+		airdropResponse.IsComplete = airdropInfo.IsComplete
+		airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
 	case "timed_mint":
 		tokenInstance, err := timedmint.NewTimedMintToken(common.HexToAddress(tokenData.Address), client)
 		if err != nil {
@@ -131,6 +184,24 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 		minter = minterAddress.String()
+
+		airdropSupply, err = tokenInstance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(tokenData.Address))
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		
+		airdropIndex, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex.Sub(airdropIndex, big.NewInt(1)))
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+		airdropResponse.AirdropIndex = airdropIndex
+		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
+		airdropResponse.IsComplete = airdropInfo.IsComplete
+		airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
 	case "creator":
 		tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(tokenData.Address), client)
 		if err != nil {
@@ -144,20 +215,22 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"name":              tokenData.Name,
-		"symbol":            tokenData.Symbol,
-		"address":           tokenData.Address,
-		"ownerAddress":      tokenData.OwnerAddress,
-		"vaultAddress":      tokenData.VaultAddress,
-		"tokenType":         tokenData.TokenType,
-		"contractVersion":   tokenData.ContractVersion,
-		"chainId":           tokenData.ChainId,
-		"totalSupply":       totalSupply.String(),
-		"maxSupply":         maxSupply.String(),
-		"nextMintAllowance": mintAllowance.String(),
-		"nextAllowedMint":   nextAllowedMint.String(),
-		"minter":            minter,
+	return c.JSON(http.StatusOK, TokenApiResponse{
+		Name:				tokenData.Name,
+		Symbol:				tokenData.Symbol,
+		Address:			tokenData.Address,
+		OwnerAddress:		tokenData.OwnerAddress,
+		VaultAddress:		tokenData.VaultAddress,
+		TokenType:			tokenData.TokenType,
+		ContractVersion:	tokenData.ContractVersion,
+		ChainId:			tokenData.ChainId,
+		TotalSupply:		totalSupply.String(),
+		MaxSupply:			maxSupply.String(),
+		NextMintAllowance:	mintAllowance.String(),
+		NextAllowedMint:	nextAllowedMint.String(),
+		Minter:				minter,
+		AirdropSupply:		airdropSupply.String(),
+		Airdrop:  			airdropResponse,
 	})
 }
 
