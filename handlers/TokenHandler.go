@@ -81,10 +81,10 @@ type AirdropInfo struct {
 }
 
 type AirdropInfoResponse struct {
-	AirdropIndex    *big.Int;
-	RootHash		string;
-	ClaimPeriodEnds *big.Int;
-	IsComplete 		bool;
+	AirdropIndex    *big.Int `json:"airdropIndex"`;
+	RootHash		string `json:"rootHash"`;
+	ClaimPeriodEnds *big.Int `json:"claimPeriodEnds"`;
+	IsComplete 		bool `json:"isComplete"`;
 }
 
 type TokenApiResponse struct {
@@ -107,12 +107,19 @@ type TokenApiResponse struct {
 
 func (token *TokenHandler) ShowToken(c echo.Context) error {
 	tokenId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
 	tokenData, err := models.GetTokenById(uint64(tokenId), *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
 
 	client, err := ethereum.ConnectToChain(tokenData.ChainId)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+	
 	var totalSupply *big.Int
 	mintAllowance := big.NewInt(0)
 	nextAllowedMint := big.NewInt(0)
