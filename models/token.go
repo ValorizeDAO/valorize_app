@@ -64,3 +64,14 @@ func GetTokenById(tokenId uint64, db gorm.DB) (TokenResponse, error) {
 	}
 	return GetTokenResponse(&t), nil
 }
+
+func GetTokenByAddress(address string, db gorm.DB) (TokenResponse, error) {
+	var t Token
+	if err := db.Where("address=?", address).First(&t).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return TokenResponse{}, err
+		}
+		return TokenResponse{}, err
+	}
+	return GetTokenResponse(&t), nil
+}
