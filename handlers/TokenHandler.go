@@ -41,7 +41,7 @@ func (token *TokenHandler) Index(c echo.Context) error {
 	userData, err := services.AuthUser(c, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": "could not find " + userData.Username,
+			"error": err.Error(),
 		})
 	}
 	var userTokens []models.Token

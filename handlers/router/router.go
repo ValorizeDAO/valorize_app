@@ -60,7 +60,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	me.PUT("/tokendata", auth.UpdateTokenData)
 	me.GET("/wallets", wallet.Index)
 	myTokens := me.Group("/tokens")
-	myTokens.GET("/", token.Index)
+	myTokens.GET("", token.Index)
 	myTokens.GET("/:id/balance", token.GetCoinBalanceForAuthUser)
 	myTokens.PUT("/:id/airdrop/create", token.NewAirdrop)
 
