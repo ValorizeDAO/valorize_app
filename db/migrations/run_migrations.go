@@ -25,6 +25,8 @@ func main() {
 	}
 
 	err := m.Migrate()
+	
+	database.Exec("ALTER TABLE airdrops DROP COLUMN raw_data;")
 
 	if err == nil {
 		print("Migrations did run successfully")
@@ -56,6 +58,16 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					Error; err != nil {
 					return err
 				}
+				if err := tx.AutoMigrate(&models.Airdrop{}).
+					AddForeignKey("token_id", "tokens(id)", "CASCADE", "CASCADE").
+					Error; err != nil {
+					return err
+				}
+				if err := tx.AutoMigrate(&models.AirdropClaim{}).
+					AddForeignKey("airdrop_id", "airdrops(id)", "CASCADE", "CASCADE").
+					Error; err != nil {
+					return err
+				}
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -69,6 +81,12 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					return nil
 				}
 				if err := tx.DropTable("links").Error; err != nil {
+					return nil
+				}
+				if err := tx.DropTable("airdrops").Error; err != nil {
+					return nil
+				}
+				if err := tx.DropTable("airdrop_claims").Error; err != nil {
 					return nil
 				}
 				return nil

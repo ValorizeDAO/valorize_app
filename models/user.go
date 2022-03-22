@@ -94,7 +94,7 @@ func GetUserByEmail(e string, db gorm.DB) (User, error) {
 
 func GetUserByUsername(username string, db gorm.DB) (User, error) {
 	var m User
-	if err := db.Preload("Token").Where("username = ?", username).First(&m).Error; err != nil {
+	if err := db.Preload("Token", "token_type= ?", "creator").Where("username = ?", username).First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return User{}, err
 		}
