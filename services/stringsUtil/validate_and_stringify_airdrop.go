@@ -17,7 +17,7 @@ func ValidateAndStringifyMap(addressToClaimAmountMap [][]string) (string, error)
 			return "", errors.New("invalid value in input for address: " + address + ", claimAmount: " + claimString + "in index: " + strconv.Itoa(i))
 		}
 		//create a string array of the address and claim amount
-		finalStringifiedMap += "[" + address + ", " + claimString + "]"
+		finalStringifiedMap += "[\"" + address + "\",\"" + claimString + "\"]"
 		//only add a comma if there are more elements in the map
 		if i < len(addressToClaimAmountMap)-1 {
 			finalStringifiedMap += ","

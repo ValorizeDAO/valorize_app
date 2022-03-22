@@ -12,6 +12,7 @@ import (
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+	"valorize-app/services/merkletree"
 	"valorize-app/services/stringsUtil"
 	"valorize-app/simpletoken"
 	timedmint "valorize-app/timedminttoken"
@@ -390,7 +391,6 @@ func (token *TokenHandler) GetGasPriceToLaunchToken(c echo.Context) error {
 
 type airdropRaw struct {
 	Payload 	[][]string  `json:"payload"`
-	MerkleRoot  string 		`json:"merkleRoot"`
 }
 
 var a airdropRaw
@@ -413,6 +413,17 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 	if !(tokenData.TokenType == "simple" || tokenData.TokenType == "timed_mint") {
 		return c.JSON(http.StatusBadRequest, returnErr(errors.New("token type is not airdropable")))
 	}
+
+	rawAirdropData, err := stringsUtil.ValidateAndStringifyMap(a.Payload)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+	
+	merkleRoot, err := merkletree.GetMerkleRoot(rawAirdropData)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+
 	client, err := ethereum.ConnectToChain(tokenData.ChainId)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
@@ -433,16 +444,10 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, returnErr(errors.New("Error getting airdrop index from token contract")))
 	}
 
-	rawAirdropData, err := stringsUtil.ValidateAndStringifyMap(a.Payload)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, returnErr(err))
-	}
-
 	airdropstruct := models.Airdrop{
 		TokenID:    	uint(tokenId),
-		MerkleRoot: 	a.MerkleRoot,
-		RawData:    	rawAirdropData,
 		OnChainIndex:	uint(onchainIndex),
+		MerkleRoot: 	merkleRoot,
 	}
 	airdrop, err := models.NewAirdrop(*token.server.DB, airdropstruct)
 	if err != nil {
@@ -455,6 +460,7 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":     "ok",
+		"merkleRoot": merkleRoot,
 	})
 }
 
