@@ -1,12 +1,17 @@
 package merkletree
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 )
+
+type merkleRootResponse struct {
+	Root string `json:"root"`
+}
 
 func GetMerkleRoot(leaves string) (string, error) {
   url := os.Getenv("AWS_SERVERLESS_HOST") + "/get-merkle-root"
@@ -30,9 +35,15 @@ func GetMerkleRoot(leaves string) (string, error) {
   }
   defer res.Body.Close()
 
-  body, err := ioutil.ReadAll(res.Body)
+  rawMerkleRoot, err := ioutil.ReadAll(res.Body)
   if err != nil {
     return "", err 
   }
-  return string(body), nil
+
+	var merkleRoot merkleRootResponse
+	err = json.Unmarshal([]byte(rawMerkleRoot), &merkleRoot)
+  if err != nil {
+    return "", err
+  }
+  return string(merkleRoot.Root), nil
 }
