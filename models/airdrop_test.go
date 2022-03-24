@@ -102,7 +102,7 @@ func TestGetLatestAirdropByTokenId(t *testing.T) {
 	prepareTestDatabase()
 	tests := []getLatestAirdropTest{
 		{2, 1, Airdrop{ID: 1, TokenID: 2, OnChainIndex: 1, MerkleRoot: "0xRoot"}},
-		{3, 2, Airdrop{ID: 2, TokenID: 3, OnChainIndex: 2, MerkleRoot: "0xRoot3"}},
+		{3, 2, Airdrop{ID: 4, TokenID: 3, OnChainIndex: 2, MerkleRoot: "0xRoot34"}},
 		{5, 10, Airdrop{ID: 3, TokenID: 5, OnChainIndex: 10,  MerkleRoot: "0xRoot4"}},
 	}
 	for _, test := range tests{
