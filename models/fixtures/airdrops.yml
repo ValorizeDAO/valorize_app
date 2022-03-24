@@ -7,3 +7,8 @@
   token_id: 3
   merkle_root: "0xRoot3"
   on_chain_index: 2
+
+- id: 3
+  token_id: 5
+  merkle_root: "0xRoot4"
+  on_chain_index: 10

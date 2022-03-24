@@ -70,6 +70,15 @@ func NewAirdropClaim(db gorm.DB, claimInfo [][]string, airdropId uint) error {
 	}
 	return nil
 }
+func GetAirdropByTokenIndexAndOnChainId(db gorm.DB, tokenId int, onChainIndex int) (Airdrop, error) {
+	var airdrop Airdrop
+	err := db.Where("token_id = ? AND on_chain_index = ?", tokenId, onChainIndex).Order("id desc").First(&airdrop).Error
+	if err != nil {
+		return Airdrop{}, err
+	}
+	return airdrop, nil
+}
+
 func GetAllAirdropClaims(db gorm.DB, airdrop_id int) ([]AirdropClaim, error) {
 	var claims []AirdropClaim
 	err := db.Where("airdrop_id = ?", airdrop_id).Find(&claims).Error

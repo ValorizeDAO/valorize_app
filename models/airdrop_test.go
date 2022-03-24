@@ -92,3 +92,26 @@ func TestGetAllAirdropClaimsReturnsCorrectValues(t *testing.T) {
 		}
     }
 }
+
+type getLatestAirdropTest struct {
+	tokenId int
+	onChainIndex int
+	expected Airdrop
+}
+func TestGetLatestAirdropByTokenId(t *testing.T) {
+	prepareTestDatabase()
+	tests := []getLatestAirdropTest{
+		{2, 1, Airdrop{ID: 1, TokenID: 2, OnChainIndex: 1, MerkleRoot: "0xRoot"}},
+		{3, 2, Airdrop{ID: 2, TokenID: 3, OnChainIndex: 2, MerkleRoot: "0xRoot3"}},
+		{5, 10, Airdrop{ID: 3, TokenID: 5, OnChainIndex: 10,  MerkleRoot: "0xRoot4"}},
+	}
+	for _, test := range tests{
+		airdrop, err := GetAirdropByTokenIndexAndOnChainId(*gormDb, test.tokenId, test.onChainIndex)
+		if err != nil {
+			t.Error(err)
+		} 
+		if airdrop != test.expected {
+			t.Errorf("\nGetAirdropByTokenIndexAndOnChainId() returns correct values for token ID %v, onChainIndex %v: returned %v, want %v", test.tokenId, test.onChainIndex, airdrop, test.expected)
+		}
+    }
+}
