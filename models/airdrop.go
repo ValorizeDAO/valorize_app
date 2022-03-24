@@ -70,3 +70,11 @@ func NewAirdropClaim(db gorm.DB, claimInfo [][]string, airdropId uint) error {
 	}
 	return nil
 }
+func GetAllAirdropClaims(db gorm.DB, airdrop_id int) ([]AirdropClaim, error) {
+	var claims []AirdropClaim
+	err := db.Where("airdrop_id = ?", airdrop_id).Find(&claims).Error
+	if err != nil {
+		return nil, err
+	}
+	return claims, nil
+}
