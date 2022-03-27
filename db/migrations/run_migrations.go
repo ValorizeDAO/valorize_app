@@ -25,6 +25,8 @@ func main() {
 	}
 
 	err := m.Migrate()
+	
+	database.Exec("ALTER TABLE airdrops DROP COLUMN raw_data;")
 
 	if err == nil {
 		print("Migrations did run successfully")
