@@ -54,6 +54,25 @@ type UserTokenIndexResponse struct {
 	Token []models.Token `json:"tokens"`
 }
 
+func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
+	tokenId, err := strconv.Atoi(c.Param("id"))
+	airdropData, err := models.GetAirdropByTokenId(uint64(tokenId), *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "no airdrop available for the given tokenId",
+		})
+	}
+	wallet_address := c.Param("address")
+	airdropClaimData, err := models.GetClaimAmountByAirdropID(uint64(airdropData.ID), wallet_address, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "there is no airdrop available for your address",
+		})
+	}
+
+	return c.JSON(http.StatusOK, airdropClaimData.ClaimAmount)
+}
+
 func (token *TokenHandler) Show(c echo.Context) error {
 	username := c.Param("username")
 	user, err := models.GetUserByUsername(username, *token.server.DB)
