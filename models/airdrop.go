@@ -23,26 +23,6 @@ type AirdropClaim struct {
 	Claimed       bool    `json:"claimed" gorm:"not null" sql:"DEFAULT:0"`
 }
 
-func GetAirdrop(airdrop *Airdrop) Airdrop {
-	return Airdrop{
-		ID:           airdrop.ID,
-		TokenID:      airdrop.TokenID,
-		MerkleRoot:   airdrop.MerkleRoot,
-		RawData:      airdrop.RawData,
-		OnChainIndex: airdrop.OnChainIndex,
-	}
-}
-
-func GetAirdropClaim(airdropClaim *AirdropClaim) AirdropClaim {
-	return AirdropClaim{
-		WalletAddress: airdropClaim.WalletAddress,
-		ClaimAmount:   airdropClaim.ClaimAmount,
-		AirdropID:     airdropClaim.AirdropID,
-		Airdrop:       airdropClaim.Airdrop,
-		Claimed:       airdropClaim.Claimed,
-	}
-}
-
 func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
 	var a Airdrop
 	if err := db.Where("token_id=?", tokenId).First(&a).Error; err != nil {
@@ -51,7 +31,7 @@ func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
 		}
 		return Airdrop{}, err
 	}
-	return GetAirdrop(&a), nil
+	return a, nil
 }
 
 func GetClaimAmountByAirdropID(airdropId uint64, walletaddress string, db gorm.DB) (AirdropClaim, error) {
@@ -62,7 +42,7 @@ func GetClaimAmountByAirdropID(airdropId uint64, walletaddress string, db gorm.D
 		}
 		return AirdropClaim{}, err
 	}
-	return GetAirdropClaim(&ac), nil
+	return ac, nil
 }
 
 func NewAirdrop(db gorm.DB, drop Airdrop) (Airdrop, error) {

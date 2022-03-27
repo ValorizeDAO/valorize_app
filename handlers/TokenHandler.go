@@ -66,7 +66,7 @@ func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 	airdropClaimData, err := models.GetClaimAmountByAirdropID(uint64(airdropData.ID), wallet_address, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
-			"error": "there is no airdrop available for your address",
+			"error": "this airdrop is not available for this address",
 		})
 	}
 
