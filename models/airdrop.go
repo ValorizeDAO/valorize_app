@@ -8,10 +8,10 @@ import (
 )
 
 type Airdrop struct {
-	ID       		uint   	`json:"id" gorm:"primary_key"`
-	TokenID   		uint   	`json:"token_id"`
-	MerkleRoot 		string 	`json:"merkle_root"`
-	OnChainIndex	uint 	`json:"onchain_index"` //The contract has an index which is stored in this field
+	ID           uint   `json:"id" gorm:"primary_key"`
+	TokenID      uint   `json:"token_id"`
+	MerkleRoot   string `json:"merkle_root"`
+	OnChainIndex uint   `json:"onchain_index"` //The contract has an index which is stored in this field
 }
 
 type AirdropClaim struct {
@@ -20,6 +20,28 @@ type AirdropClaim struct {
 	AirdropID     uint    `json:"airdrop_id"`
 	Airdrop       Airdrop `json:"airdrop"`
 	Claimed       bool    `json:"claimed" gorm:"not null" sql:"DEFAULT:0"`
+}
+
+func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
+	var a Airdrop
+	if err := db.Where("token_id=?", tokenId).First(&a).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return Airdrop{}, err
+		}
+		return Airdrop{}, err
+	}
+	return a, nil
+}
+
+func GetClaimAmountByAirdropID(airdropId uint64, walletaddress string, db gorm.DB) (AirdropClaim, error) {
+	var ac AirdropClaim
+	if err := db.Where("airdrop_id=?", airdropId).Where("wallet_address=?", walletaddress).Find(&ac).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return AirdropClaim{}, err
+		}
+		return AirdropClaim{}, err
+	}
+	return ac, nil
 }
 
 func NewAirdrop(db gorm.DB, drop Airdrop) (Airdrop, error) {
