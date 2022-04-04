@@ -20,9 +20,7 @@ type merkleProofResponse struct {
 func GetMerkleRoot(leaves string) (string, error) {
 	url := os.Getenv("AWS_SERVERLESS_HOST") + "/get-merkle-root"
 	method := "POST"
-
 	payload := strings.NewReader(`{"leaves":` + leaves + `}`)
-
 	client := &http.Client{}
 
 	req, err := http.NewRequest(method, url, payload)
@@ -55,10 +53,7 @@ func GetMerkleRoot(leaves string) (string, error) {
 func GetMerkleProof(leaves string, target string) (string, string, error) {
 	url := os.Getenv("AWS_SERVERLESS_HOST") + "/get-merkle-proof"
 	method := "POST"
-
 	payload := strings.NewReader(`{"leaves":` + leaves + `,"targetLeaf":` + target + `}`)
-
-	fmt.Println(payload)
 	client := &http.Client{}
 
 	req, err := http.NewRequest(method, url, payload)
@@ -73,7 +68,6 @@ func GetMerkleProof(leaves string, target string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	fmt.Println(res)
 	defer res.Body.Close()
 
 	rawMerkleProof, err := ioutil.ReadAll(res.Body)
@@ -81,9 +75,7 @@ func GetMerkleProof(leaves string, target string) (string, string, error) {
 		return "", "", err
 	}
 
-	fmt.Println(string(rawMerkleProof))
 	var merkleProof merkleProofResponse
-	//"json: cannot unmarshal array into Go struct field merkleProofResponse.merkle_proof of type string"
 	err = json.Unmarshal([]byte(rawMerkleProof), &merkleProof)
 	if err != nil {
 		return "", "", err

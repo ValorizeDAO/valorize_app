@@ -77,7 +77,7 @@ func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 			"error": "could not get all airdrop information",
 		})
 	}
-	//get all airdrop claim information into an array of strings
+
 	var airdropClaimsMap [][]string
 	for _, claim := range airdropClaims {
 		claimPair := []string{claim.WalletAddress, claim.ClaimAmount}
