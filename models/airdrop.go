@@ -24,7 +24,7 @@ type AirdropClaim struct {
 
 func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
 	var a Airdrop
-	if err := db.Where("token_id=?", tokenId).First(&a).Error; err != nil {
+	if err := db.Where("token_id=?", tokenId).Order("on_chain_index desc").First(&a).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return Airdrop{}, err
 		}

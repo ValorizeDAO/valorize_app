@@ -70,8 +70,36 @@ func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 			"error": "this airdrop is not available for this address",
 		})
 	}
+	airdropClaims, err := models.GetAllAirdropClaims(*token.server.DB, int(airdropClaimData.AirdropID))
+	if err != nil {
+		fmt.Println("ERROR GETTING AIRDROP DATA")
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not get all airdrop information",
+		})
+	}
+	//get all airdrop claim information into an array of strings
+	var airdropClaimsMap [][]string
+	for _, claim := range airdropClaims {
+		claimPair := []string{claim.WalletAddress, claim.ClaimAmount}
+		airdropClaimsMap = append(airdropClaimsMap, claimPair)
+	}
 
-	return c.JSON(http.StatusOK, airdropClaimData.ClaimAmount)
+	rawAirdropData, err := stringsUtil.ValidateAndStringifyMap(airdropClaimsMap)
+	if err != nil {
+		fmt.Println("ERROR VALIDATING AIRDROP DATA")
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+	merkleRoot, merkleProof, err := merkletree.GetMerkleProof(rawAirdropData, "[\""+wallet_address+"\",\""+airdropClaimData.ClaimAmount+"\"]")
+	if err != nil {
+		fmt.Println("ERROR GETTING MERKLE PROOF")
+		return c.JSON(http.StatusInternalServerError, returnErr(err))
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"claim":       airdropClaimData.ClaimAmount,
+		"merkleProof": merkleProof,
+		"merkleRoot":  merkleRoot,
+	})
 }
 
 func (token *TokenHandler) Show(c echo.Context) error {
