@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -54,6 +55,11 @@ func (token *TokenHandler) Index(c echo.Context) error {
 type UserTokenIndexResponse struct {
 	Token []models.Token `json:"tokens"`
 }
+type ClaimAmountResponse struct {
+	MerkleRoot  string   `json:"merkleRoot"`
+	Claim       string   `json:"claim"`
+	MerkleProof []string `json:"merkleProof"`
+}
 
 func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 	tokenId, err := strconv.Atoi(c.Param("id"))
@@ -89,17 +95,22 @@ func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 		fmt.Println("ERROR VALIDATING AIRDROP DATA")
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
-	merkleRoot, merkleProof, err := merkletree.GetMerkleProof(rawAirdropData, "[\""+wallet_address+"\",\""+airdropClaimData.ClaimAmount+"\"]")
+	proof, err := merkletree.GetMerkleProof(rawAirdropData, "[\""+wallet_address+"\",\""+airdropClaimData.ClaimAmount+"\"]")
 	if err != nil {
 		fmt.Println("ERROR GETTING MERKLE PROOF")
 		return c.JSON(http.StatusInternalServerError, returnErr(err))
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"claim":       airdropClaimData.ClaimAmount,
-		"merkleProof": merkleProof,
-		"merkleRoot":  merkleRoot,
+	response, err := json.Marshal(ClaimAmountResponse{
+		Claim:       airdropClaimData.ClaimAmount,
+		MerkleRoot:  proof.Root,
+		MerkleProof: proof.MerkleProof,
 	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, returnErr(err))
+	}
+	fmt.Printf(string(response))
+	return c.JSONBlob(http.StatusOK, response)
 }
 
 func (token *TokenHandler) Show(c echo.Context) error {
@@ -146,7 +157,7 @@ type AirdropInfo struct {
 }
 
 type AirdropInfoResponse struct {
-	AirdropIndex    *big.Int `json:"airdropIndex"`
+	AirdropIndex    *big.Int `json:"airdropOnChainIndex"`
 	RootHash        string   `json:"rootHash"`
 	ClaimPeriodEnds *big.Int `json:"claimPeriodEnds"`
 	IsComplete      bool     `json:"isComplete"`
@@ -221,6 +232,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
+
 		airdropResponse.AirdropIndex = airdropIndex
 		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
 		airdropResponse.IsComplete = airdropInfo.IsComplete

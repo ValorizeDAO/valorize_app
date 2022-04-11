@@ -12,7 +12,7 @@ import (
 type merkleRootResponse struct {
 	Root string `json:"root"`
 }
-type merkleProofResponse struct {
+type MerkleProofResponse struct {
 	MerkleProof []string `json:"merkle_proof"`
 	Root        string   `json:"root"`
 }
@@ -50,7 +50,7 @@ func GetMerkleRoot(leaves string) (string, error) {
 	return string(merkleRoot.Root), nil
 }
 
-func GetMerkleProof(leaves string, target string) (string, string, error) {
+func GetMerkleProof(leaves string, target string) (MerkleProofResponse, error) {
 	url := os.Getenv("AWS_SERVERLESS_HOST") + "/get-merkle-proof"
 	method := "POST"
 	payload := strings.NewReader(`{"leaves":` + leaves + `,"targetLeaf":` + target + `}`)
@@ -60,26 +60,25 @@ func GetMerkleProof(leaves string, target string) (string, string, error) {
 
 	if err != nil {
 		fmt.Println(err)
-		return "", "", err
+		return MerkleProofResponse{}, err
 	}
 	req.Header.Add("Content-Type", "text/plain")
 
 	res, err := client.Do(req)
 	if err != nil {
-		return "", "", err
+		return MerkleProofResponse{}, err
 	}
 	defer res.Body.Close()
 
 	rawMerkleProof, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return "", "", err
+		return MerkleProofResponse{}, err
 	}
 
-	var merkleProof merkleProofResponse
+	var merkleProof MerkleProofResponse
 	err = json.Unmarshal([]byte(rawMerkleProof), &merkleProof)
 	if err != nil {
-		return "", "", err
+		return MerkleProofResponse{}, err
 	}
-	proof := strings.Join(merkleProof.MerkleProof, ",")
-	return string(merkleProof.Root), "[" + proof + "]", nil
+	return merkleProof, nil
 }
