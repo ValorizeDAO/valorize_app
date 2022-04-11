@@ -157,6 +157,7 @@ type AirdropInfo struct {
 }
 
 type AirdropInfoResponse struct {
+	Id              uint     `json:"id"`
 	AirdropIndex    *big.Int `json:"airdropOnChainIndex"`
 	RootHash        string   `json:"rootHash"`
 	ClaimPeriodEnds *big.Int `json:"claimPeriodEnds"`
@@ -233,6 +234,14 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 
+		if airdropIndex.Cmp(big.NewInt(-1)) > 0 {
+			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+			airdropResponse.Id = airdropLocalData.ID
+			if err != nil {
+				return c.JSON(http.StatusNotFound, returnErr(err))
+			}
+		}
+
 		airdropResponse.AirdropIndex = airdropIndex
 		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
 		airdropResponse.IsComplete = airdropInfo.IsComplete
@@ -278,11 +287,26 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
+
+		if airdropIndex.Cmp(big.NewInt(-1)) > 0 {
+			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+			airdropResponse.Id = airdropLocalData.ID
+			if err != nil {
+				return c.JSON(http.StatusNotFound, returnErr(err))
+			}
+		}
+
 		airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex.Sub(airdropIndex, big.NewInt(1)))
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
-		airdropResponse.AirdropIndex = airdropIndex
+
+		airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		airdropResponse.Id = airdropLocalData.ID
 		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
 		airdropResponse.IsComplete = airdropInfo.IsComplete
 		airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
@@ -536,6 +560,7 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":     "ok",
+		"airdropId":  strconv.Itoa(int(airdrop.ID)),
 		"merkleRoot": merkleRoot,
 	})
 }
