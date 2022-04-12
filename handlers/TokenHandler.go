@@ -70,7 +70,7 @@ func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 		})
 	}
 	wallet_address := c.Param("address")
-	airdropClaimData, err := models.GetClaimAmountByAirdropID(uint64(airdropData.ID), wallet_address, *token.server.DB)
+	airdropClaimData, err := models.GetAirdropClaimByAirdropID(uint64(airdropData.ID), wallet_address, *token.server.DB)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "this airdrop is not available for this address",
@@ -111,6 +111,21 @@ func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 	}
 	fmt.Printf(string(response))
 	return c.JSONBlob(http.StatusOK, response)
+}
+
+func (token *TokenHandler) AirdropEligibility(c echo.Context) error {
+	walletAddress := c.Param("address")
+	airdropClaimData, err := models.GetAirdropClaimByAddress(walletAddress, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "your address is not eligible for an airdrop",
+		})
+	}
+	return c.JSON(http.StatusOK, airdropClaimData)
+}
+
+type TokenResponse struct {
+	Token *models.TokenResponse `json:"token"`
 }
 
 func (token *TokenHandler) Show(c echo.Context) error {

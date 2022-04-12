@@ -33,7 +33,18 @@ func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
 	return a, nil
 }
 
-func GetClaimAmountByAirdropID(airdropId uint64, walletaddress string, db gorm.DB) (AirdropClaim, error) {
+func GetAirdropClaimByAddress(walletaddress string, db gorm.DB) (AirdropClaim, error) {
+	var ac AirdropClaim
+	if err := db.Preload("Airdrop").Where("wallet_address=?", walletaddress).First(&ac).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return AirdropClaim{}, err
+		}
+		return AirdropClaim{}, err
+	}
+	return ac, nil
+}
+
+func GetAirdropClaimByAirdropID(airdropId uint64, walletaddress string, db gorm.DB) (AirdropClaim, error) {
 	var ac AirdropClaim
 	if err := db.Where("airdrop_id=?", airdropId).Where("wallet_address=?", walletaddress).Find(&ac).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
