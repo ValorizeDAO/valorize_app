@@ -50,6 +50,8 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	tokenPublic := api.Group("/token")
 	tokenPublic.GET("/:id", token.ShowToken)
 	tokenPublic.GET("/:id/admins", token.ShowTokenAdmins)
+	tokenPublic.GET("/:id/airdrops/:address/claim", token.AirdropClaimAmount)
+	tokenPublic.GET("/:address/airdrops", token.AirdropEligibility)
 
 	me := api.Group("/me", appmiddleware.AuthMiddleware)
 	me.GET("", auth.ShowUser)
@@ -60,6 +62,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	me.PUT("/tokendata", auth.UpdateTokenData)
 	me.GET("/wallets", wallet.Index)
 	myTokens := me.Group("/tokens")
+	myTokens.GET("", token.Index)
 	myTokens.GET("/:id/balance", token.GetCoinBalanceForAuthUser)
 	myTokens.PUT("/:id/airdrop/create", token.NewAirdrop)
 

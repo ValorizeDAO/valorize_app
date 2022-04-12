@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -12,6 +13,7 @@ import (
 	"valorize-app/models"
 	"valorize-app/services"
 	"valorize-app/services/ethereum"
+	"valorize-app/services/merkletree"
 	"valorize-app/services/stringsUtil"
 	"valorize-app/simpletoken"
 	timedmint "valorize-app/timedminttoken"
@@ -37,6 +39,95 @@ type PublicTokenResponse struct {
 	PriceData map[string]string `json:"price_data"`
 }
 
+func (token *TokenHandler) Index(c echo.Context) error {
+	userData, err := services.AuthUser(c, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": err.Error(),
+		})
+	}
+	var userTokens []models.Token
+	token.server.DB.Where("user_id = ?", userData.ID).Table("tokens").Find(&userTokens)
+
+	return c.JSON(http.StatusOK, UserTokenIndexResponse{userTokens})
+}
+
+type UserTokenIndexResponse struct {
+	Token []models.Token `json:"tokens"`
+}
+type ClaimAmountResponse struct {
+	MerkleRoot  string   `json:"merkleRoot"`
+	Claim       string   `json:"claim"`
+	MerkleProof []string `json:"merkleProof"`
+}
+
+func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
+	tokenId, err := strconv.Atoi(c.Param("id"))
+	airdropData, err := models.GetAirdropByTokenId(uint64(tokenId), *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "no airdrop available for the given tokenId",
+		})
+	}
+	wallet_address := c.Param("address")
+	airdropClaimData, err := models.GetAirdropClaimByAirdropID(uint64(airdropData.ID), wallet_address, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "this airdrop is not available for this address",
+		})
+	}
+	airdropClaims, err := models.GetAllAirdropClaims(*token.server.DB, int(airdropClaimData.AirdropID))
+	if err != nil {
+		fmt.Println("ERROR GETTING AIRDROP DATA")
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "could not get all airdrop information",
+		})
+	}
+
+	var airdropClaimsMap [][]string
+	for _, claim := range airdropClaims {
+		claimPair := []string{claim.WalletAddress, claim.ClaimAmount}
+		airdropClaimsMap = append(airdropClaimsMap, claimPair)
+	}
+
+	rawAirdropData, err := stringsUtil.ValidateAndStringifyMap(airdropClaimsMap)
+	if err != nil {
+		fmt.Println("ERROR VALIDATING AIRDROP DATA")
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+	proof, err := merkletree.GetMerkleProof(rawAirdropData, "[\""+wallet_address+"\",\""+airdropClaimData.ClaimAmount+"\"]")
+	if err != nil {
+		fmt.Println("ERROR GETTING MERKLE PROOF")
+		return c.JSON(http.StatusInternalServerError, returnErr(err))
+	}
+
+	response, err := json.Marshal(ClaimAmountResponse{
+		Claim:       airdropClaimData.ClaimAmount,
+		MerkleRoot:  proof.Root,
+		MerkleProof: proof.MerkleProof,
+	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, returnErr(err))
+	}
+	fmt.Printf(string(response))
+	return c.JSONBlob(http.StatusOK, response)
+}
+
+func (token *TokenHandler) AirdropEligibility(c echo.Context) error {
+	walletAddress := c.Param("address")
+	airdropClaimData, err := models.GetAirdropClaimByAddress(walletAddress, *token.server.DB)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "your address is not eligible for an airdrop",
+		})
+	}
+	return c.JSON(http.StatusOK, airdropClaimData)
+}
+
+type TokenResponse struct {
+	Token *models.TokenResponse `json:"token"`
+}
+
 func (token *TokenHandler) Show(c echo.Context) error {
 	username := c.Param("username")
 	user, err := models.GetUserByUsername(username, *token.server.DB)
@@ -52,7 +143,7 @@ func (token *TokenHandler) Show(c echo.Context) error {
 		})
 	}
 
-	client, _ := ethereum.ConnectToChain("1")
+	client, _ := ethereum.ConnectToChain(user.Token.ChainId)
 	instance, _ := creatortoken.NewCreatorToken(common.HexToAddress(user.Token.Address), client)
 
 	ownerTokenBalance, _ := instance.BalanceOf(&bind.CallOpts{}, common.HexToAddress(user.Token.OwnerAddress))
@@ -75,34 +166,35 @@ func returnErr(err error) map[string]string {
 }
 
 type AirdropInfo struct {
-	Root [32]byte;
-	ClaimPeriodEnds *big.Int;
-	IsComplete bool;
+	Root            [32]byte
+	ClaimPeriodEnds *big.Int
+	IsComplete      bool
 }
 
 type AirdropInfoResponse struct {
-	AirdropIndex    *big.Int `json:"airdropIndex"`;
-	RootHash		string `json:"rootHash"`;
-	ClaimPeriodEnds *big.Int `json:"claimPeriodEnds"`;
-	IsComplete 		bool `json:"isComplete"`;
+	Id              uint     `json:"id"`
+	AirdropIndex    *big.Int `json:"airdropOnChainIndex"`
+	RootHash        string   `json:"rootHash"`
+	ClaimPeriodEnds *big.Int `json:"claimPeriodEnds"`
+	IsComplete      bool     `json:"isComplete"`
 }
 
 type TokenApiResponse struct {
-	Name				string 	`json:"name"`;
-	Symbol				string 	`json:"symbol"`;
-	Address				string 	`json:"address"`;
-	OwnerAddress		string 	`json:"ownerAddress"`;
-	VaultAddress		string 	`json:"vaultAddress"`;
-	TokenType			string 	`json:"tokenType"`;
-	ContractVersion		string 	`json:"contractVersion"`;
-	ChainId				string 	`json:"chainId"`;
-	TotalSupply			string 	`json:"totalSupply"`;
-	MaxSupply			string 	`json:"maxSupply"`;
-	NextMintAllowance	string 	`json:"nextMintAllowance"`;
-	NextAllowedMint		string	`json:"nextAllowedMint"`;
-	Minter				string 	`json:"minter"`;
-	AirdropSupply		string 	`json:"airdropSupply"`;
-	Airdrop				AirdropInfoResponse `json:"airdropInfo"`;
+	Name              string              `json:"name"`
+	Symbol            string              `json:"symbol"`
+	Address           string              `json:"address"`
+	OwnerAddress      string              `json:"ownerAddress"`
+	VaultAddress      string              `json:"vaultAddress"`
+	TokenType         string              `json:"tokenType"`
+	ContractVersion   string              `json:"contractVersion"`
+	ChainId           string              `json:"chainId"`
+	TotalSupply       string              `json:"totalSupply"`
+	MaxSupply         string              `json:"maxSupply"`
+	NextMintAllowance string              `json:"nextMintAllowance"`
+	NextAllowedMint   string              `json:"nextAllowedMint"`
+	Minter            string              `json:"minter"`
+	AirdropSupply     string              `json:"airdropSupply"`
+	Airdrop           AirdropInfoResponse `json:"airdropInfo"`
 }
 
 func (token *TokenHandler) ShowToken(c echo.Context) error {
@@ -119,7 +211,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
-	
+
 	var totalSupply *big.Int
 	mintAllowance := big.NewInt(0)
 	nextAllowedMint := big.NewInt(0)
@@ -147,7 +239,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
-		
+
 		airdropIndex, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
@@ -156,6 +248,15 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
+
+		if airdropIndex.Cmp(big.NewInt(-1)) > 0 {
+			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+			airdropResponse.Id = airdropLocalData.ID
+			if err != nil {
+				return c.JSON(http.StatusNotFound, returnErr(err))
+			}
+		}
+
 		airdropResponse.AirdropIndex = airdropIndex
 		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
 		airdropResponse.IsComplete = airdropInfo.IsComplete
@@ -196,16 +297,31 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
-		
+
 		airdropIndex, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
+
+		if airdropIndex.Cmp(big.NewInt(-1)) > 0 {
+			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+			airdropResponse.Id = airdropLocalData.ID
+			if err != nil {
+				return c.JSON(http.StatusNotFound, returnErr(err))
+			}
+		}
+
 		airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex.Sub(airdropIndex, big.NewInt(1)))
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
-		airdropResponse.AirdropIndex = airdropIndex
+
+		airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+		if err != nil {
+			return c.JSON(http.StatusNotFound, returnErr(err))
+		}
+
+		airdropResponse.Id = airdropLocalData.ID
 		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
 		airdropResponse.IsComplete = airdropInfo.IsComplete
 		airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
@@ -223,21 +339,21 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, TokenApiResponse{
-		Name:				tokenData.Name,
-		Symbol:				tokenData.Symbol,
-		Address:			tokenData.Address,
-		OwnerAddress:		tokenData.OwnerAddress,
-		VaultAddress:		tokenData.VaultAddress,
-		TokenType:			tokenData.TokenType,
-		ContractVersion:	tokenData.ContractVersion,
-		ChainId:			tokenData.ChainId,
-		TotalSupply:		totalSupply.String(),
-		MaxSupply:			maxSupply.String(),
-		NextMintAllowance:	mintAllowance.String(),
-		NextAllowedMint:	nextAllowedMint.String(),
-		Minter:				minter,
-		AirdropSupply:		airdropSupply.String(),
-		Airdrop:  			airdropResponse,
+		Name:              tokenData.Name,
+		Symbol:            tokenData.Symbol,
+		Address:           tokenData.Address,
+		OwnerAddress:      tokenData.OwnerAddress,
+		VaultAddress:      tokenData.VaultAddress,
+		TokenType:         tokenData.TokenType,
+		ContractVersion:   tokenData.ContractVersion,
+		ChainId:           tokenData.ChainId,
+		TotalSupply:       totalSupply.String(),
+		MaxSupply:         maxSupply.String(),
+		NextMintAllowance: mintAllowance.String(),
+		NextAllowedMint:   nextAllowedMint.String(),
+		Minter:            minter,
+		AirdropSupply:     airdropSupply.String(),
+		Airdrop:           airdropResponse,
 	})
 }
 
@@ -389,8 +505,7 @@ func (token *TokenHandler) GetGasPriceToLaunchToken(c echo.Context) error {
 }
 
 type airdropRaw struct {
-	Payload 	[][]string  `json:"payload"`
-	MerkleRoot  string 		`json:"merkleRoot"`
+	Payload [][]string `json:"payload"`
 }
 
 var a airdropRaw
@@ -413,6 +528,17 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 	if !(tokenData.TokenType == "simple" || tokenData.TokenType == "timed_mint") {
 		return c.JSON(http.StatusBadRequest, returnErr(errors.New("token type is not airdropable")))
 	}
+
+	rawAirdropData, err := stringsUtil.ValidateAndStringifyMap(a.Payload)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+
+	merkleRoot, err := merkletree.GetMerkleRoot(rawAirdropData)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+
 	client, err := ethereum.ConnectToChain(tokenData.ChainId)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
@@ -428,21 +554,15 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
 
-	onchainIndex, err :=  strconv.Atoi(airdropOnChainIndex.String())
+	onchainIndex, err := strconv.Atoi(airdropOnChainIndex.String())
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(errors.New("Error getting airdrop index from token contract")))
 	}
 
-	rawAirdropData, err := stringsUtil.ValidateAndStringifyMap(a.Payload)
-	if err != nil {
-		return c.JSON(http.StatusNotFound, returnErr(err))
-	}
-
 	airdropstruct := models.Airdrop{
-		TokenID:    	uint(tokenId),
-		MerkleRoot: 	a.MerkleRoot,
-		RawData:    	rawAirdropData,
-		OnChainIndex:	uint(onchainIndex),
+		TokenID:      uint(tokenId),
+		OnChainIndex: uint(onchainIndex),
+		MerkleRoot:   merkleRoot,
 	}
 	airdrop, err := models.NewAirdrop(*token.server.DB, airdropstruct)
 	if err != nil {
@@ -455,6 +575,8 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"status":     "ok",
+		"airdropId":  strconv.Itoa(int(airdrop.ID)),
+		"merkleRoot": merkleRoot,
 	})
 }
 
