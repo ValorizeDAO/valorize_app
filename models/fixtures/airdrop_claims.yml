@@ -1,0 +1,24 @@
+- wallet_address: "0x0"
+  claim_amount: "100000"
+  airdrop_id: 1
+  claimed: 0
+
+- wallet_address: "0x1"
+  claim_amount: "200000"
+  airdrop_id: 1
+  claimed: 0
+
+- wallet_address: "0x2"
+  claim_amount: "200000"
+  airdrop_id: 1
+  claimed: 0
+
+- wallet_address: "0x1"
+  claim_amount: "200000"
+  airdrop_id: 2
+  claimed: 0
+
+- wallet_address: "0x2"
+  claim_amount: "400000"
+  airdrop_id: 2
+  claimed: 0

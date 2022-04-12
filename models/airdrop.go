@@ -24,7 +24,7 @@ type AirdropClaim struct {
 
 func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
 	var a Airdrop
-	if err := db.Where("token_id=?", tokenId).First(&a).Error; err != nil {
+	if err := db.Where("token_id=?", tokenId).Order("on_chain_index desc").First(&a).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return Airdrop{}, err
 		}
@@ -102,4 +102,21 @@ func NewAirdropClaim(db gorm.DB, claimInfo [][]string, airdropId uint) error {
 		fmt.Println(err)
 	}
 	return nil
+}
+func GetAirdropByTokenIndexAndOnChainId(db gorm.DB, tokenId int, onChainIndex int) (Airdrop, error) {
+	var airdrop Airdrop
+	err := db.Where("token_id = ? AND on_chain_index = ?", tokenId, onChainIndex).Order("id desc").First(&airdrop).Error
+	if err != nil {
+		return Airdrop{}, err
+	}
+	return airdrop, nil
+}
+
+func GetAllAirdropClaims(db gorm.DB, airdrop_id int) ([]AirdropClaim, error) {
+	var claims []AirdropClaim
+	err := db.Where("airdrop_id = ?", airdrop_id).Find(&claims).Error
+	if err != nil {
+		return nil, err
+	}
+	return claims, nil
 }

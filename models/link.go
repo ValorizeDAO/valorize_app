@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	"github.com/jinzhu/gorm"
 )
 
@@ -28,7 +26,6 @@ func GetUserLinks(user *User, db gorm.DB) ([]Link, error) {
 
 func SaveLink(user *User, link Link, db gorm.DB) error {
 	link.UserId = user.ID
-	fmt.Println("\n\n SAVING \n\n")
 	if err := db.Save(&link).Error; err != nil {
 		return err
 	}
@@ -37,7 +34,6 @@ func SaveLink(user *User, link Link, db gorm.DB) error {
 
 func CreateLink(user *User, link Link, db gorm.DB) (Link, error) {
 	link.UserId = user.ID
-	fmt.Println("\n\n CREATING \n\n")
 	result := db.Create(&link)
 	if result.Error != nil {
 		return link, result.Error
