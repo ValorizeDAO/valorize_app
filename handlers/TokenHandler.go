@@ -240,27 +240,27 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 
-		airdropIndex, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
-		if err != nil {
-			return c.JSON(http.StatusNotFound, returnErr(err))
-		}
-		airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex.Sub(airdropIndex, big.NewInt(1)))
+		airdropNumber, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 
-		if airdropIndex.Cmp(big.NewInt(-1)) > 0 {
+		if airdropNumber.Cmp(big.NewInt(0)) > 0 {
+			airdropIndex := airdropNumber.Sub(airdropNumber, big.NewInt(1))
 			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
-			airdropResponse.Id = airdropLocalData.ID
 			if err != nil {
 				return c.JSON(http.StatusNotFound, returnErr(err))
 			}
+			airdropResponse.Id = airdropLocalData.ID
+			airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex)
+			if err != nil {
+				return c.JSON(http.StatusNotFound, returnErr(err))
+			}
+			airdropResponse.AirdropIndex = airdropIndex
+			airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
+			airdropResponse.IsComplete = airdropInfo.IsComplete
+			airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
 		}
-
-		airdropResponse.AirdropIndex = airdropIndex
-		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
-		airdropResponse.IsComplete = airdropInfo.IsComplete
-		airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
 	case "timed_mint":
 		tokenInstance, err := timedmint.NewTimedMintToken(common.HexToAddress(tokenData.Address), client)
 		if err != nil {
@@ -298,33 +298,26 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
 
-		airdropIndex, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
+		airdropNumber, err := tokenInstance.NumberOfAirdrops(&bind.CallOpts{})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, returnErr(err))
 		}
-
-		if airdropIndex.Cmp(big.NewInt(-1)) > 0 {
+		if airdropNumber.Cmp(big.NewInt(0)) > 0 {
+			airdropIndex := airdropNumber.Sub(airdropNumber, big.NewInt(1))
 			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
-			airdropResponse.Id = airdropLocalData.ID
 			if err != nil {
 				return c.JSON(http.StatusNotFound, returnErr(err))
 			}
+			airdropResponse.Id = airdropLocalData.ID
+			airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex)
+			if err != nil {
+				return c.JSON(http.StatusNotFound, returnErr(err))
+			}
+			airdropResponse.AirdropIndex = airdropIndex
+			airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
+			airdropResponse.IsComplete = airdropInfo.IsComplete
+			airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
 		}
-
-		airdropInfo, err = tokenInstance.GetAirdropInfo(&bind.CallOpts{}, airdropIndex.Sub(airdropIndex, big.NewInt(1)))
-		if err != nil {
-			return c.JSON(http.StatusNotFound, returnErr(err))
-		}
-
-		airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
-		if err != nil {
-			return c.JSON(http.StatusNotFound, returnErr(err))
-		}
-
-		airdropResponse.Id = airdropLocalData.ID
-		airdropResponse.ClaimPeriodEnds = airdropInfo.ClaimPeriodEnds
-		airdropResponse.IsComplete = airdropInfo.IsComplete
-		airdropResponse.RootHash = hex.EncodeToString(airdropInfo.Root[:])
 	case "creator":
 		tokenInstance, err := creatortoken.NewCreatorToken(common.HexToAddress(tokenData.Address), client)
 		if err != nil {
