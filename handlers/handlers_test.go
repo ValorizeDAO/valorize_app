@@ -1,4 +1,4 @@
-package models_test
+package handlers_test
 
 import (
 	"database/sql"
@@ -6,21 +6,28 @@ import (
 	"testing"
 	"valorize-app/models"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/jinzhu/gorm"
 )
 
 var (
 	db       *sql.DB
-	gormDb   *gorm.DB
 	fixtures *testfixtures.Loader
+	gormDb   *gorm.DB
 )
 
 func TestMain(m *testing.M) {
-	db, gormDb = getTestDatabase()
-	gormDb.AutoMigrate(&models.Airdrop{}, &models.AirdropClaim{}, models.SmartContract{})
 	var err error
+	dataSourceName := "root:@tcp(127.0.0.1:3306)/valorize_test?charset=utf8&parseTime=True&loc=Local"
+	db, err = sql.Open("mysql", dataSourceName)
+	if err != nil {
+		panic(err.Error())
+	}
+	gormDb, err = gorm.Open("mysql", dataSourceName)
+	if err != nil {
+		panic(err.Error())
+	}
+	gormDb.AutoMigrate(&models.Airdrop{}, &models.AirdropClaim{}, &models.SmartContract{})
 	fixtures, err = testfixtures.New(
 		testfixtures.Database(db),
 		testfixtures.Dialect("mysql"),
@@ -38,18 +45,4 @@ func prepareTestDatabase() {
 	if err := fixtures.Load(); err != nil {
 		panic(err.Error())
 	}
-}
-
-func getTestDatabase() (*sql.DB, *gorm.DB) {
-	var err error
-	dataSourceName := "root:@tcp(127.0.0.1:3306)/valorize_test?charset=utf8&parseTime=True&loc=Local"
-	db, err := sql.Open("mysql", dataSourceName)
-	if err != nil {
-		panic(err.Error())
-	}
-	gormDb, err := gorm.Open("mysql", dataSourceName)
-	if err != nil {
-		panic(err.Error())
-	}
-	return db, gormDb
 }

@@ -26,12 +26,11 @@ import (
 
 type TokenHandler struct {
 	server *Server
+	models *models.Model
 }
 
-func NewTokenHandler(s *Server) *TokenHandler {
-	return &TokenHandler{
-		server: s,
-	}
+func NewTokenHandler(s *Server, m *models.Model) *TokenHandler {
+	return &TokenHandler{s, m}
 }
 
 type PublicTokenResponse struct {
@@ -63,20 +62,20 @@ type ClaimAmountResponse struct {
 
 func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 	tokenId, err := strconv.Atoi(c.Param("id"))
-	airdropData, err := models.GetAirdropByTokenId(uint64(tokenId), *token.server.DB)
+	airdropData, err := token.models.GetAirdropByTokenId(uint64(tokenId))
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "no airdrop available for the given tokenId",
 		})
 	}
 	wallet_address := c.Param("address")
-	airdropClaimData, err := models.GetAirdropClaimByAirdropID(uint64(airdropData.ID), wallet_address, *token.server.DB)
+	airdropClaimData, err := token.models.GetAirdropClaimByAirdropID(uint64(airdropData.ID), wallet_address)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "this airdrop is not available for this address",
 		})
 	}
-	airdropClaims, err := models.GetAllAirdropClaims(*token.server.DB, int(airdropClaimData.AirdropID))
+	airdropClaims, err := token.models.GetAllAirdropClaims(int(airdropClaimData.AirdropID))
 	if err != nil {
 		fmt.Println("ERROR GETTING AIRDROP DATA")
 		return c.JSON(http.StatusNotFound, map[string]string{
@@ -115,7 +114,7 @@ func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
 
 func (token *TokenHandler) AirdropEligibility(c echo.Context) error {
 	walletAddress := c.Param("address")
-	airdropClaimData, err := models.GetAirdropClaimByAddress(walletAddress, *token.server.DB)
+	airdropClaimData, err := token.models.GetAirdropClaimByAddress(walletAddress)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "your address is not eligible for an airdrop",
@@ -130,7 +129,7 @@ type TokenResponse struct {
 
 func (token *TokenHandler) Show(c echo.Context) error {
 	username := c.Param("username")
-	user, err := models.GetUserByUsername(username, *token.server.DB)
+	user, err := token.models.GetUserByUsername(username)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token for " + username,
@@ -202,7 +201,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
-	tokenData, err := models.GetTokenById(uint64(tokenId), *token.server.DB)
+	tokenData, err := token.models.GetTokenById(uint64(tokenId))
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
@@ -247,7 +246,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 
 		if airdropNumber.Cmp(big.NewInt(0)) > 0 {
 			airdropIndex := airdropNumber.Sub(airdropNumber, big.NewInt(1))
-			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+			airdropLocalData, err := token.models.GetAirdropByTokenIndexAndOnChainId(tokenId, int(airdropIndex.Int64()))
 			if err != nil {
 				return c.JSON(http.StatusNotFound, returnErr(err))
 			}
@@ -304,7 +303,7 @@ func (token *TokenHandler) ShowToken(c echo.Context) error {
 		}
 		if airdropNumber.Cmp(big.NewInt(0)) > 0 {
 			airdropIndex := airdropNumber.Sub(airdropNumber, big.NewInt(1))
-			airdropLocalData, err := models.GetAirdropByTokenIndexAndOnChainId(*token.server.DB, tokenId, int(airdropIndex.Int64()))
+			airdropLocalData, err := token.models.GetAirdropByTokenIndexAndOnChainId(tokenId, int(airdropIndex.Int64()))
 			if err != nil {
 				return c.JSON(http.StatusNotFound, returnErr(err))
 			}
@@ -387,7 +386,7 @@ func (token *TokenHandler) GetTokenStakingRewards(c echo.Context) error {
 			"error": "etherToCheck param required",
 		})
 	}
-	user, err := models.GetUserByUsername(username, *token.server.DB)
+	user, err := token.models.GetUserByUsername(username)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token for " + user.Username,
@@ -432,7 +431,7 @@ func (token *TokenHandler) GetTokenSellingRewards(c echo.Context) error {
 			"error": "tokenToCheck param required",
 		})
 	}
-	user, err := models.GetUserByUsername(username, *token.server.DB)
+	user, err := token.models.GetUserByUsername(username)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find " + username,
@@ -513,7 +512,7 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, returnErr(err))
 	}
 
-	tokenData, err := models.GetTokenById(uint64(tokenId), *token.server.DB)
+	tokenData, err := token.models.GetTokenById(uint64(tokenId))
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
@@ -557,12 +556,12 @@ func (token *TokenHandler) NewAirdrop(c echo.Context) error {
 		OnChainIndex: uint(onchainIndex),
 		MerkleRoot:   merkleRoot,
 	}
-	airdrop, err := models.NewAirdrop(*token.server.DB, airdropstruct)
+	airdrop, err := token.models.NewAirdrop(airdropstruct)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
 
-	if models.NewAirdropClaim(*token.server.DB, a.Payload, airdrop.ID) != nil {
+	if token.models.NewAirdropClaim(a.Payload, airdrop.ID) != nil {
 		return c.JSON(http.StatusInternalServerError, returnErr(err))
 	}
 
@@ -582,14 +581,14 @@ func (token *TokenHandler) GetCoinBalanceForAuthUser(c echo.Context) error {
 			"error": "token id invalid",
 		})
 	}
-	creatorToken, err := models.GetTokenById(creatorTokenId, *token.server.DB)
+	creatorToken, err := token.models.GetTokenById(creatorTokenId)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find token",
 		})
 	}
 
-	wallets, err := models.GetAllWalletsByUserId(user.ID, *token.server.DB)
+	wallets, err := token.models.GetAllWalletsByUserId(user.ID)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{
 			"error": "could not find wallets for user with id " + strconv.FormatUint(uint64(user.ID), 10),
