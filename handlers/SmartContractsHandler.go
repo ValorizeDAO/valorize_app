@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"valorize-app/models"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -10,7 +12,7 @@ type ContractHandler struct {
 }
 
 type modelsInterface interface {
-	GetSmartContractByKey(key string)
+	GetSmartContractByKey(key string) (models.SmartContract, error)
 }
 
 func NewContractsHandler(s *Server, m modelsInterface) *ContractHandler {

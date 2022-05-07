@@ -1,7 +1,8 @@
-package models
+package models_test
 
 import (
 	"testing"
+	"valorize-app/models"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -12,12 +13,13 @@ type getAllAirdropClaimsTestIsRightLength struct {
 
 func TestGetAllAirdropClaimsIsRightLength(t *testing.T) {
 	prepareTestDatabase()
-	tests := []getAllAirdropClaimsTestIsRightLength{
+	testTable := []getAllAirdropClaimsTestIsRightLength{
 		{airdropId: 1, expectedLength: 3},
 		{airdropId: 2, expectedLength: 2},
 	}
-	for _, test := range tests {
-		output, err := GetAllAirdropClaims(*gormDb, test.airdropId)
+	mdl := models.NewModels(gormDb)
+	for _, test := range testTable {
+		output, err := mdl.GetAllAirdropClaims(test.airdropId)
 		if err != nil {
 			t.Error(err)
 		}
@@ -29,24 +31,25 @@ func TestGetAllAirdropClaimsIsRightLength(t *testing.T) {
 
 type getAllAirdropClaimsTest struct {
 	airdropId int
-	expected  []AirdropClaim
+	expected  []models.AirdropClaim
 }
 
 func TestGetAllAirdropClaimsReturnsCorrectValues(t *testing.T) {
 	prepareTestDatabase()
 	tests := []getAllAirdropClaimsTest{
-		{1, []AirdropClaim{
+		{1, []models.AirdropClaim{
 			{WalletAddress: "0x0", ClaimAmount: "100000", AirdropID: 1},
 			{WalletAddress: "0x1", ClaimAmount: "200000", AirdropID: 1},
 			{WalletAddress: "0x2", ClaimAmount: "200000", AirdropID: 1},
 		}},
-		{2, []AirdropClaim{
+		{2, []models.AirdropClaim{
 			{WalletAddress: "0x1", ClaimAmount: "200000", AirdropID: 2},
 			{WalletAddress: "0x2", ClaimAmount: "400000", AirdropID: 2},
 		}},
 	}
+	mdl := models.NewModels(gormDb)
 	for _, test := range tests {
-		allClaims, err := GetAllAirdropClaims(*gormDb, test.airdropId)
+		allClaims, err := mdl.GetAllAirdropClaims(test.airdropId)
 		if err != nil {
 			t.Error(err)
 		}
@@ -61,18 +64,19 @@ func TestGetAllAirdropClaimsReturnsCorrectValues(t *testing.T) {
 type getLatestAirdropTest struct {
 	tokenId      int
 	onChainIndex int
-	expected     Airdrop
+	expected     models.Airdrop
 }
 
 func TestGetLatestAirdropByTokenId(t *testing.T) {
 	prepareTestDatabase()
 	tests := []getLatestAirdropTest{
-		{2, 1, Airdrop{ID: 1, TokenID: 2, OnChainIndex: 1, MerkleRoot: "0xRoot"}},
-		{3, 2, Airdrop{ID: 4, TokenID: 3, OnChainIndex: 2, MerkleRoot: "0xRoot34"}},
-		{5, 10, Airdrop{ID: 3, TokenID: 5, OnChainIndex: 10, MerkleRoot: "0xRoot4"}},
+		{2, 1, models.Airdrop{ID: 1, TokenID: 2, OnChainIndex: 1, MerkleRoot: "0xRoot"}},
+		{3, 2, models.Airdrop{ID: 4, TokenID: 3, OnChainIndex: 2, MerkleRoot: "0xRoot34"}},
+		{5, 10, models.Airdrop{ID: 3, TokenID: 5, OnChainIndex: 10, MerkleRoot: "0xRoot4"}},
 	}
+	mdl := models.NewModels(gormDb)
 	for _, test := range tests {
-		airdrop, err := GetAirdropByTokenIndexAndOnChainId(*gormDb, test.tokenId, test.onChainIndex)
+		airdrop, err := mdl.GetAirdropByTokenIndexAndOnChainId(test.tokenId, test.onChainIndex)
 		if err != nil {
 			t.Error(err)
 		}

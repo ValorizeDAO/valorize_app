@@ -16,10 +16,11 @@ import (
 
 type EthHandler struct {
 	server *Server
+	models *models.Model
 }
 
-func NewEthHandler(s *Server) *EthHandler {
-	return &EthHandler{s}
+func NewEthHandler(s *Server, m *models.Model) *EthHandler {
+	return &EthHandler{s, m}
 }
 
 func (eth *EthHandler) Ping(c echo.Context) error {
@@ -66,7 +67,7 @@ func (eth *EthHandler) AddWalletToAccount(c echo.Context) error {
 	}
 
 	user, _ := services.AuthUser(c, *eth.server.DB)
-	err := models.AddExternalWalletForUser(&user, address, *eth.server.DB)
+	err := eth.models.AddExternalWalletForUser(&user, address)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),

@@ -38,7 +38,7 @@ type TokenResponse struct {
 	TokenType       string `json:"token_type"`
 }
 
-func GetTokenResponse(token *Token) TokenResponse {
+func (m *Model) GetTokenResponse(token *Token) TokenResponse {
 	return TokenResponse{
 		ID:              token.ID,
 		Name:            token.Name,
@@ -54,21 +54,21 @@ func GetTokenResponse(token *Token) TokenResponse {
 	}
 }
 
-func GetTokenById(tokenId uint64, db gorm.DB) (TokenResponse, error) {
+func (m *Model) GetTokenById(tokenId uint64) (TokenResponse, error) {
 	var t Token
-	if err := db.Where("id=?", tokenId).First(&t).Error; err != nil {
+	if err := m.db.Where("id=?", tokenId).First(&t).Error; err != nil {
 		return TokenResponse{}, err
 	}
-	return GetTokenResponse(&t), nil
+	return m.GetTokenResponse(&t), nil
 }
 
-func GetTokenByAddress(address string, db gorm.DB) (TokenResponse, error) {
+func (m *Model) GetTokenByAddress(address string) (TokenResponse, error) {
 	var t Token
-	if err := db.Where("address=?", address).First(&t).Error; err != nil {
+	if err := m.db.Where("address=?", address).First(&t).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return TokenResponse{}, err
 		}
 		return TokenResponse{}, err
 	}
-	return GetTokenResponse(&t), nil
+	return m.GetTokenResponse(&t), nil
 }

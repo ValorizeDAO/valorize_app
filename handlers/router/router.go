@@ -5,6 +5,7 @@ import (
 	"os"
 	"valorize-app/handlers"
 	appmiddleware "valorize-app/middleware"
+	"valorize-app/models"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -12,14 +13,15 @@ import (
 
 func NewRouter(s *handlers.Server) echo.Echo {
 	e := *s.Echo
-	payment := handlers.NewPaymentHandler(s)
-	auth := handlers.NewAuthHandler(s)
-	eth := handlers.NewEthHandler(s)
-	user := handlers.NewUserHandler(s)
-	wallet := handlers.NewWalletHandler(s)
-	token := handlers.NewTokenHandler(s)
-	utils := handlers.NewUtilsHandler(s)
-	contracts := handlers.NewContractsHandler(s, m.Models)
+	m := models.NewModels(s.DB)
+	payment := handlers.NewPaymentHandler(s, m)
+	auth := handlers.NewAuthHandler(s, m)
+	eth := handlers.NewEthHandler(s, m)
+	user := handlers.NewUserHandler(s, m)
+	token := handlers.NewTokenHandler(s, m)
+	wallet := handlers.NewWalletHandler(s, m)
+	utils := handlers.NewUtilsHandler(s, m)
+	contracts := handlers.NewContractsHandler(s, m)
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -66,6 +68,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	myTokens.GET("", token.Index)
 	myTokens.GET("/:id/balance", token.GetCoinBalanceForAuthUser)
 	myTokens.PUT("/:id/airdrop/create", token.NewAirdrop)
+	me.GET("/contract-bytecode/:key", contracts.GetContractBytecode)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)
