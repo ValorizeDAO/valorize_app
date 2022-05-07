@@ -19,6 +19,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	wallet := handlers.NewWalletHandler(s)
 	token := handlers.NewTokenHandler(s)
 	utils := handlers.NewUtilsHandler(s)
+	contracts := handlers.NewContractsHandler(s, m.Models)
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
