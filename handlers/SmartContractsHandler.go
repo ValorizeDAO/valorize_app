@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"valorize-app/models"
 
 	"github.com/labstack/echo/v4"
@@ -20,6 +21,9 @@ func NewContractsHandler(s *Server, m modelsInterface) *ContractHandler {
 }
 
 func (smartContract *ContractHandler) GetContractBytecode(c echo.Context) error {
-	smartContract.models.GetSmartContractByKey("contract_bytecode")
-	return nil
+	contract, err := smartContract.models.GetSmartContractByKey("contract_bytecode")
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+	return c.JSON(http.StatusOK, contract)
 }

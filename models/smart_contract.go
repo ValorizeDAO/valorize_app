@@ -1,7 +1,7 @@
 package models
 
 type SmartContract struct {
-	ID       uint   `gorm:"primary_key"`
+	ID       uint   `json:"id" gorm:"primary_key"`
 	Key      string `json:"key" gorm:"unique;"`
 	ByteCode string `json:"byte_code"`
 }
