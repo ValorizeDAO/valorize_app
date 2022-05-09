@@ -21,7 +21,8 @@ func NewContractsHandler(s *Server, m modelsInterface) *ContractHandler {
 }
 
 func (smartContract *ContractHandler) GetContractBytecode(c echo.Context) error {
-	contract, err := smartContract.models.GetSmartContractByKey("contract_bytecode")
+	contractName := c.Param("key")
+	contract, err := smartContract.models.GetSmartContractByKey(contractName)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}

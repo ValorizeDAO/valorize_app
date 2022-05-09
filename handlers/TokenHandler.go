@@ -61,7 +61,7 @@ type ClaimAmountResponse struct {
 }
 
 func (token *TokenHandler) AirdropClaimAmount(c echo.Context) error {
-	tokenId, err := strconv.Atoi(c.Param("id"))
+	tokenId, _ := strconv.Atoi(c.Param("id"))
 	airdropData, err := token.models.GetAirdropByTokenId(uint64(tokenId))
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{

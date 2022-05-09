@@ -1,4 +1,4 @@
-package seeder
+package main
 
 import (
 	"fmt"
@@ -22,8 +22,8 @@ func main() {
 }
 
 func RunSeeder(db *gorm.DB) error {
-	user, err := UserSeeder(db, "javier123454321", "test@test.com", "test", true)
-	_, err = UserSeeder(db, "zselyke", "test@test2.com", "test", false)
+	user, _ := UserSeeder(db, "javier123454321", "test@test.com", "test", true)
+	UserSeeder(db, "zselyke", "test@test2.com", "test", false)
 	creatorToken := models.Token{
 		UserId:          user.ID,
 		ContractVersion: "v0.0.1",
@@ -33,7 +33,7 @@ func RunSeeder(db *gorm.DB) error {
 		Address:         "0x05F3074138b9bfAbe8ADf0f68f2AA33047a8192e",
 		TxHash:          "0xb57e816e5ca3c68d7d9d7522380318e8fde8dd320a247ac15997c3cb0956553f",
 	}
-	err = db.Create(&creatorToken).Error
+	err := db.Create(&creatorToken).Error
 	return err
 }
 
