@@ -4,3 +4,6 @@
 - id: 2
   key: "timedMint_token_v0.1.0"
   byte_code: "0x123a4"
+- id: 3
+  key: "creator_token_v0.1.0"
+  byte_code: "0x123a4"

@@ -45,6 +45,38 @@ func TestGetContractBytecode(t *testing.T) {
 	}
 }
 
+func TestGetContractIndex(t *testing.T) {
+	tests := []getContractByteCodeTest{
+		{
+			name:              "Should return contract bytecode",
+			shouldReturnError: false,
+			expectedStatus:    http.StatusOK,
+			expectedBody:      "{\"id\":0,\"key\":\"test_key\",\"byte_code\":\"0x12a34\"}\n",
+		},
+		{
+			name:              "Should return error",
+			shouldReturnError: true,
+			expectedStatus:    http.StatusNotFound,
+			expectedBody:      "{\"error\":\"error getting smart contract\"}\n",
+		},
+	}
+	for _, test := range tests {
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/:key")
+		c.SetParamNames("key")
+		c.SetParamValues("test_key")
+
+		contracts := handlers.NewContractsHandler(&handlers.Server{}, mockModels{test.shouldReturnError})
+		if assert.NoError(t, contracts.GetContractBytecode(c)) {
+			assert.Equal(t, test.expectedStatus, rec.Code)
+			assert.Equal(t, test.expectedBody, rec.Body.String())
+		}
+	}
+}
+
 type getContractByteCodeTest struct {
 	name              string
 	shouldReturnError bool
@@ -61,4 +93,16 @@ func (m mockModels) GetSmartContractByKey(key string) (models.SmartContract, err
 		return models.SmartContract{}, errors.New("error getting smart contract")
 	}
 	return models.SmartContract{Key: key, ByteCode: "0x12a34"}, nil
+}
+
+func (m mockModels) GetSmartContractsIndex() ([]interface{string, int}, error) {
+	if m.ShouldReturnError {
+		return []interface{}, errors.New("error getting smart contract")
+	}
+	return []interface{ TestKey string, ID int}{
+		{TestKey: "contract_2", ID: 0},
+		{TestKey: "contract_1", ID: 1},
+		{TestKey: "contract_3", ID: 2},
+		{TestKey: "contract_4", ID: 3},
+	}, nil
 }

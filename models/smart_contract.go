@@ -14,3 +14,12 @@ func (m *Model) GetSmartContractByKey(key string) (SmartContract, error) {
 	}
 	return contractInfo, err
 }
+
+func (m *Model) GetSmartContractsIndex() ([]string, error) {
+	var contracts []string
+	err := m.db.Model(&SmartContract{}).Pluck("`key`", &contracts).Error
+	if err != nil {
+		return []string{}, err
+	}
+	return contracts, err
+}
