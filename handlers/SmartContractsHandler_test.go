@@ -51,13 +51,13 @@ func TestGetContractIndex(t *testing.T) {
 			name:              "Should return contract bytecode",
 			shouldReturnError: false,
 			expectedStatus:    http.StatusOK,
-			expectedBody:      "{\"id\":0,\"key\":\"test_key\",\"byte_code\":\"0x12a34\"}\n",
+			expectedBody:      "{\"smartContractKeys\":[\"contract_2\",\"contract_1\",\"contract_3\",\"contract_4\"]}\n",
 		},
 		{
 			name:              "Should return error",
 			shouldReturnError: true,
 			expectedStatus:    http.StatusNotFound,
-			expectedBody:      "{\"error\":\"error getting smart contract\"}\n",
+			expectedBody:      "{\"error\":\"error getting smart contracts index\"}\n",
 		},
 	}
 	for _, test := range tests {
@@ -65,12 +65,9 @@ func TestGetContractIndex(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		c.SetPath("/:key")
-		c.SetParamNames("key")
-		c.SetParamValues("test_key")
 
 		contracts := handlers.NewContractsHandler(&handlers.Server{}, mockModels{test.shouldReturnError})
-		if assert.NoError(t, contracts.GetContractBytecode(c)) {
+		if assert.NoError(t, contracts.GetContractKeys(c)) {
 			assert.Equal(t, test.expectedStatus, rec.Code)
 			assert.Equal(t, test.expectedBody, rec.Body.String())
 		}
@@ -95,14 +92,14 @@ func (m mockModels) GetSmartContractByKey(key string) (models.SmartContract, err
 	return models.SmartContract{Key: key, ByteCode: "0x12a34"}, nil
 }
 
-func (m mockModels) GetSmartContractsIndex() ([]interface{string, int}, error) {
+func (m mockModels) GetSmartContractsIndex() ([]string, error) {
 	if m.ShouldReturnError {
-		return []interface{}, errors.New("error getting smart contract")
+		return []string{}, errors.New("error getting smart contracts index")
 	}
-	return []interface{ TestKey string, ID int}{
-		{TestKey: "contract_2", ID: 0},
-		{TestKey: "contract_1", ID: 1},
-		{TestKey: "contract_3", ID: 2},
-		{TestKey: "contract_4", ID: 3},
+	return []string{
+		"contract_2",
+		"contract_1",
+		"contract_3",
+		"contract_4",
 	}, nil
 }

@@ -69,6 +69,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	myTokens.GET("/:id/balance", token.GetCoinBalanceForAuthUser)
 	myTokens.PUT("/:id/airdrop/create", token.NewAirdrop)
 	me.GET("/contract-bytecode/:key", contracts.GetContractBytecode)
+	me.GET("/contract-bytecode", contracts.GetContractKeys)
 
 	r := api.Group("/admin", appmiddleware.AuthMiddleware)
 	r.POST("/wallet", eth.CreateWalletFromRequest)

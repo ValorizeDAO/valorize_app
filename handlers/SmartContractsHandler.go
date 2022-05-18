@@ -14,6 +14,7 @@ type ContractHandler struct {
 
 type modelsInterface interface {
 	GetSmartContractByKey(key string) (models.SmartContract, error)
+	GetSmartContractsIndex() ([]string, error)
 }
 
 func NewContractsHandler(s *Server, m modelsInterface) *ContractHandler {
@@ -27,4 +28,13 @@ func (smartContract *ContractHandler) GetContractBytecode(c echo.Context) error 
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
 	return c.JSON(http.StatusOK, contract)
+}
+func (smartContract *ContractHandler) GetContractKeys(c echo.Context) error {
+	contracts, err := smartContract.models.GetSmartContractsIndex()
+	if err != nil {
+		return c.JSON(http.StatusNotFound, returnErr(err))
+	}
+	return c.JSON(http.StatusOK, map[string][]string{
+		"smartContractKeys": contracts,
+	})
 }
