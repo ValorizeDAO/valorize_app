@@ -42,7 +42,7 @@ type UserPublicProfile struct {
 	Token            Token  `json:"token"`
 }
 
-func GetUserProfile(user *User) UserProfile {
+func (m *Model) GetUserProfile(user *User) UserProfile {
 	return UserProfile{
 		user.ID,
 		user.Email,
@@ -58,7 +58,7 @@ func GetUserProfile(user *User) UserProfile {
 	}
 }
 
-func GetUserPublicProfile(user *User) UserPublicProfile {
+func (m *Model) GetUserPublicProfile(user *User) UserPublicProfile {
 	return UserPublicProfile{
 		user.ID,
 		user.Name,
@@ -70,51 +70,51 @@ func GetUserPublicProfile(user *User) UserPublicProfile {
 	}
 }
 
-func GetUserByID(id uint, db gorm.DB) (User, error) {
-	var m User
-	if err := db.First(&m, id).Error; err != nil {
+func (m *Model) GetUserByID(id uint) (User, error) {
+	var u User
+	if err := m.db.First(&m, id).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return User{}, nil
 		}
 		return User{}, err
 	}
-	return m, nil
+	return u, nil
 }
 
-func GetUserByEmail(e string, db gorm.DB) (User, error) {
-	var m User
-	if err := db.Where(&User{Email: e}).First(&m).Error; err != nil {
+func (m *Model) GetUserByEmail(e string) (User, error) {
+	var u User
+	if err := m.db.Where(&User{Email: e}).First(&u).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return User{}, nil
 		}
 		return User{}, err
 	}
-	return m, nil
+	return u, nil
 }
 
-func GetUserByUsername(username string, db gorm.DB) (User, error) {
-	var m User
-	if err := db.Preload("Token", "token_type= ?", "creator").Where("username = ?", username).First(&m).Error; err != nil {
+func (m *Model) GetUserByUsername(username string) (User, error) {
+	var u User
+	if err := m.db.Preload("Token", "token_type= ?", "creator").Where("username = ?", username).First(&u).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return User{}, err
 		}
 		return User{}, err
 	}
-	return m, nil
+	return u, nil
 }
 
-func GetUserProfileByUsername(username string, db gorm.DB) (User, error) {
-	var m User
-	if err := db.Preload("Token").Where("username = ?", username).First(&m).Error; err != nil {
+func (m *Model) GetUserProfileByUsername(username string) (User, error) {
+	var u User
+	if err := m.db.Preload("Token").Where("username = ?", username).First(&u).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return User{}, err
 		}
 		return User{}, err
 	}
-	links, err := GetUserLinks(&m, db)
+	links, err := m.GetUserLinks(&u)
 	if err != nil {
 		return User{}, err
 	}
-	m.Links = links
-	return m, nil
+	u.Links = links
+	return u, nil
 }

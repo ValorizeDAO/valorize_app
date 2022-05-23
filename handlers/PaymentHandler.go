@@ -22,10 +22,11 @@ import (
 
 type PaymentHandler struct {
 	Server *Server
+	models *models.Model
 }
 
-func NewPaymentHandler(s *Server) *PaymentHandler {
-	return &PaymentHandler{s}
+func NewPaymentHandler(s *Server, m *models.Model) *PaymentHandler {
+	return &PaymentHandler{s, m}
 }
 
 func (payment *PaymentHandler) CreateCheckoutSession(c echo.Context) error {
@@ -112,7 +113,7 @@ func (payment *PaymentHandler) OnPaymentAccepted(c echo.Context) error {
 		}
 		addr, tx, _, err := payment._fulfillOrder(session)
 		customerId32bit, _ := strconv.ParseUint(session.ClientReferenceID, 10, 32)
-		user, err := models.GetUserByID(uint(customerId32bit), *payment.Server.DB)
+		user, err := payment.models.GetUserByID(uint(customerId32bit))
 
 		fmt.Printf(`
 ==============================================================================================

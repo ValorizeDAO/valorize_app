@@ -2,28 +2,28 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/labstack/echo/v4"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"valorize-app/models"
+
+	"github.com/labstack/echo/v4"
 )
 
 type UtilsHandler struct {
 	server *Server
+	models *models.Model
 }
 
-func NewUtilsHandler(s *Server) *UtilsHandler {
-	return &UtilsHandler{s}
+func NewUtilsHandler(s *Server, m *models.Model) *UtilsHandler {
+	return &UtilsHandler{s, m}
 }
 
 func (utils *UtilsHandler) ShowEthPrice(c echo.Context) error {
-  fmt.Println("TEST")
 	url := "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD&api_key=" + os.Getenv("CRYPTOCOMPARE_KEY")
 	method := "GET"
 
-	client := &http.Client {
-	}
+	client := &http.Client{}
 	req, err := http.NewRequest(method, url, nil)
 
 	if err != nil {
@@ -39,7 +39,5 @@ func (utils *UtilsHandler) ShowEthPrice(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(body))
-	//response, err := json.Marshal(body)
 	return c.JSON(http.StatusOK, json.RawMessage(body))
 }
