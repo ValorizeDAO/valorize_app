@@ -26,8 +26,6 @@ func main() {
 
 	err := m.Migrate()
 	
-	database.Exec("ALTER TABLE airdrops DROP COLUMN raw_data;")
-
 	if err == nil {
 		print("Migrations did run successfully")
 	} else {
@@ -68,6 +66,10 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					Error; err != nil {
 					return err
 				}
+				if err := tx.AutoMigrate(&models.SmartContract{}).
+					Error; err != nil {
+					return err
+				}
 				return nil
 			},
 			Rollback: func(tx *gorm.DB) error {
@@ -87,6 +89,9 @@ func GetMigrations(database *gorm.DB) *gormigrate.Gormigrate {
 					return nil
 				}
 				if err := tx.DropTable("airdrop_claims").Error; err != nil {
+					return nil
+				}
+				if err := tx.DropTable("smart_contract").Error; err != nil {
 					return nil
 				}
 				return nil

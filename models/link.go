@@ -13,9 +13,9 @@ type Link struct {
 	Description string `json:"description" gorm:"type:varchar(200);"`
 }
 
-func GetUserLinks(user *User, db gorm.DB) ([]Link, error) {
+func (m *Model) GetUserLinks(user *User) ([]Link, error) {
 	var links []Link
-	if err := db.Where("user_id = ?", user.ID).Find(&links).Error; err != nil {
+	if err := m.db.Where("user_id = ?", user.ID).Find(&links).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return make([]Link, 0), err
 		}
@@ -24,25 +24,25 @@ func GetUserLinks(user *User, db gorm.DB) ([]Link, error) {
 	return links, nil
 }
 
-func SaveLink(user *User, link Link, db gorm.DB) error {
+func (m *Model) SaveLink(user *User, link Link) error {
 	link.UserId = user.ID
-	if err := db.Save(&link).Error; err != nil {
+	if err := m.db.Save(&link).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func CreateLink(user *User, link Link, db gorm.DB) (Link, error) {
+func (m *Model) CreateLink(user *User, link Link) (Link, error) {
 	link.UserId = user.ID
-	result := db.Create(&link)
+	result := m.db.Create(&link)
 	if result.Error != nil {
 		return link, result.Error
 	}
 	return link, nil
 }
 
-func DeleteLink(link Link, db gorm.DB) error {
-	if err := db.Delete(&link).Error; err != nil {
+func (m *Model) DeleteLink(link Link) error {
+	if err := m.db.Delete(&link).Error; err != nil {
 		return err
 	}
 	return nil

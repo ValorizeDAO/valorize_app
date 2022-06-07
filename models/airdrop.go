@@ -22,9 +22,9 @@ type AirdropClaim struct {
 	Claimed       bool    `json:"claimed" gorm:"not null" sql:"DEFAULT:0"`
 }
 
-func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
+func (m *Model) GetAirdropByTokenId(tokenId uint64) (Airdrop, error) {
 	var a Airdrop
-	if err := db.Where("token_id=?", tokenId).Order("on_chain_index desc").First(&a).Error; err != nil {
+	if err := m.db.Where("token_id=?", tokenId).Order("on_chain_index desc").First(&a).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return Airdrop{}, err
 		}
@@ -33,9 +33,9 @@ func GetAirdropByTokenId(tokenId uint64, db gorm.DB) (Airdrop, error) {
 	return a, nil
 }
 
-func GetAirdropClaimByAddress(walletaddress string, db gorm.DB) (AirdropClaim, error) {
+func (m *Model) GetAirdropClaimByAddress(walletaddress string) (AirdropClaim, error) {
 	var ac AirdropClaim
-	if err := db.Preload("Airdrop").Where("wallet_address=?", walletaddress).First(&ac).Error; err != nil {
+	if err := m.db.Preload("Airdrop").Where("wallet_address=?", walletaddress).First(&ac).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return AirdropClaim{}, err
 		}
@@ -44,9 +44,9 @@ func GetAirdropClaimByAddress(walletaddress string, db gorm.DB) (AirdropClaim, e
 	return ac, nil
 }
 
-func GetAirdropClaimByAirdropID(airdropId uint64, walletaddress string, db gorm.DB) (AirdropClaim, error) {
+func (m *Model) GetAirdropClaimByAirdropID(airdropId uint64, walletaddress string) (AirdropClaim, error) {
 	var ac AirdropClaim
-	if err := db.Where("airdrop_id=?", airdropId).Where("wallet_address=?", walletaddress).Find(&ac).Error; err != nil {
+	if err := m.db.Where("airdrop_id=?", airdropId).Where("wallet_address=?", walletaddress).Find(&ac).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return AirdropClaim{}, err
 		}
@@ -55,19 +55,19 @@ func GetAirdropClaimByAirdropID(airdropId uint64, walletaddress string, db gorm.
 	return ac, nil
 }
 
-func NewAirdrop(db gorm.DB, drop Airdrop) (Airdrop, error) {
-	if err := db.Save(&drop).Error; err != nil {
+func (m *Model) NewAirdrop(drop Airdrop) (Airdrop, error) {
+	if err := m.db.Save(&drop).Error; err != nil {
 		return Airdrop{}, err
 	}
 	return drop, nil
 }
 
-func NewAirdropClaim(db gorm.DB, claimInfo [][]string, airdropId uint) error {
+func (m *Model) NewAirdropClaim(claimInfo [][]string, airdropId uint) error {
 	chunkSize := 150
 	if len(claimInfo) < chunkSize {
 		chunkSize = len(claimInfo)
 	}
-	tx := db.Begin()
+	tx := m.db.Begin()
 	var divided [][][]string
 
 	// grabs the first { size } and makes a list of chunks
@@ -103,18 +103,18 @@ func NewAirdropClaim(db gorm.DB, claimInfo [][]string, airdropId uint) error {
 	}
 	return nil
 }
-func GetAirdropByTokenIndexAndOnChainId(db gorm.DB, tokenId int, onChainIndex int) (Airdrop, error) {
+func (m *Model) GetAirdropByTokenIndexAndOnChainId(tokenId int, onChainIndex int) (Airdrop, error) {
 	var airdrop Airdrop
-	err := db.Where("token_id = ? AND on_chain_index = ?", tokenId, onChainIndex).Order("id desc").First(&airdrop).Error
+	err := m.db.Where("token_id = ? AND on_chain_index = ?", tokenId, onChainIndex).Order("id desc").First(&airdrop).Error
 	if err != nil {
 		return Airdrop{}, err
 	}
 	return airdrop, nil
 }
 
-func GetAllAirdropClaims(db gorm.DB, airdrop_id int) ([]AirdropClaim, error) {
+func (m *Model) GetAllAirdropClaims(airdrop_id int) ([]AirdropClaim, error) {
 	var claims []AirdropClaim
-	err := db.Where("airdrop_id = ?", airdrop_id).Find(&claims).Error
+	err := m.db.Where("airdrop_id = ?", airdrop_id).Find(&claims).Error
 	if err != nil {
 		return nil, err
 	}

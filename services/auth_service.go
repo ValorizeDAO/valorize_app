@@ -35,7 +35,8 @@ func AuthUser(c echo.Context, DB gorm.DB) (models.User, error) {
 	if err != nil {
 		return models.User{}, errors.New("error getting user")
 	}
-	user, err := models.GetUserProfileByUsername(token.Claims.(*TokenClaims).Username, DB)
+	model := models.NewModels(&DB)
+	user, err := model.GetUserProfileByUsername(token.Claims.(*TokenClaims).Username)
 	if err != nil {
 		return models.User{}, errors.New("could not find user in database")
 	}
