@@ -20,12 +20,13 @@ func main() {
 	user, err := AddToAlpha(database, username)
 	if err == nil {
 		fmt.Print("Added to alpha ", user.Username)
-	} 
+	}
 
 }
 
 func AddToAlpha(db *gorm.DB, username string) (models.User, error) {
-	userData, err := models.GetUserByUsername(username, *db)
+	m := models.NewModels(db)
+	userData, err := m.GetUserByUsername(username)
 
 	if err != nil {
 		fmt.Println("could not find user " + username + err.Error())
@@ -40,5 +41,3 @@ func AddToAlpha(db *gorm.DB, username string) (models.User, error) {
 	}
 	return userData, nil
 }
-
-
