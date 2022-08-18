@@ -12,7 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"valorize-app/creatortoken"
+	creatortoken "valorize-app/contracts_creatortoken"
 	"valorize-app/models"
 
 	"github.com/ethereum/go-ethereum/accounts"
