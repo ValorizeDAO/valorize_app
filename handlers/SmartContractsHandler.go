@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"os"
 	deployer "valorize-app/contracts_deployer"
 	"valorize-app/models"
 	"valorize-app/services/ethereum"
@@ -47,7 +48,7 @@ func (smartContract *ContractHandler) GetContractPrice(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
 
-	deployerInstance, err := deployer.NewDeployer(common.HexToAddress("0x2ff54204b36655D34cB8bD6EE008C43C4BC9373f"), client)
+	deployerInstance, err := deployer.NewDeployer(common.HexToAddress(os.Getenv("DEPLOYER")), client)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, returnErr(err))
 	}
