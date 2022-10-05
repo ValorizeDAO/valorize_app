@@ -54,7 +54,7 @@ func (auth *AuthHandler) Login(c echo.Context) error {
 
 	}
 
-	token, _, err := services.NewToken(user)
+	token, _, err := services.NewToken(user, 0)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "could not create token",
@@ -141,7 +141,7 @@ func (auth *AuthHandler) Register(c echo.Context) error {
 
 	go ethereum.StoreUserKeystore(password, user.ID, auth.server.DB)
 
-	token, _, err := services.NewToken(user)
+	token, _, err := services.NewToken(user, 0)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "could not create token",

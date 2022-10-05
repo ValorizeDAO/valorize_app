@@ -43,8 +43,11 @@ func AuthUser(c echo.Context, DB gorm.DB) (models.User, error) {
 	return user, nil
 }
 
-func NewToken(user models.User) (string, int64, error) {
-	_expiration := time.Now().Add(time.Hour * 144).Unix()
+func NewToken(user models.User, duration time.Duration) (string, int64, error) {
+	if duration == 0 {
+		duration = 144
+	}
+	_expiration := time.Now().Add(time.Hour * duration).Unix()
 	claims := &TokenClaims{
 		user.Username,
 		user.ID,
