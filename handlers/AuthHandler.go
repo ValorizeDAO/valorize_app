@@ -74,6 +74,48 @@ func (auth *AuthHandler) Login(c echo.Context) error {
 
 }
 
+func (auth *AuthHandler) UpdatePasswordViaUrl(c echo.Context) error {
+	newPassword := c.FormValue("password")
+	credential := c.FormValue("credential")
+
+	_, claims, err := services.GetTokenClaims(credential)
+	user, err := auth.models.GetUserByUsername(claims.Username)
+	if err != nil {
+		return c.JSON(http.StatusConflict, map[string]string{
+			"error": "user invalid",
+		})
+	}
+
+	hash, _ := bcrypt.GenerateFromPassword([]byte(newPassword), 10)
+
+	user.Password = string(hash)
+
+	if auth.server.DB.Save(&user).Error != nil {
+		return c.JSON(http.StatusConflict, map[string]string{
+			"error": "could not save new password for " + user.Username,
+		})
+	}
+
+	token, _, err := services.NewToken(user, 0)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not create token",
+		})
+	}
+
+	cookie := services.CreateTokenCookie(token)
+	c.SetCookie(cookie)
+
+	userStruct, err := json.Marshal(auth.models.GetUserProfile(&user))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "could not find logged in user information",
+		})
+	}
+	return c.JSON(http.StatusOK, json.RawMessage(userStruct))
+
+}
+
 func (auth *AuthHandler) Logout(c echo.Context) error {
 	cookie, err := c.Cookie("token")
 	if err != nil {

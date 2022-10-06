@@ -22,12 +22,21 @@ func GetTokenFromCookie(c echo.Context) (*jwt.Token, error) {
 	if err != nil {
 		return nil, errors.New("no token cookie found")
 	}
+	token, _, err := GetTokenClaims(cookie.Value)
+	return token, err
+}
+
+func GetTokenClaims(tokenRaw string) (*jwt.Token, *TokenClaims, error) {
 	claims := &TokenClaims{}
-	token, err := jwt.ParseWithClaims(cookie.Value, claims, func(token *jwt.Token) (interface{}, error) {
-		//TODO: get better key management for app
+	token, err := jwt.ParseWithClaims(tokenRaw, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte("secret"), nil
 	})
-	return token, err
+
+	if tokenClaims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
+		return token, tokenClaims, err
+	} else {
+		return &jwt.Token{}, &TokenClaims{}, errors.New("token invalid")
+	}
 }
 
 func AuthUser(c echo.Context, DB gorm.DB) (models.User, error) {
