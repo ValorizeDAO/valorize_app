@@ -43,6 +43,7 @@ func NewRouter(s *handlers.Server) echo.Echo {
 	e.POST("/login", auth.Login)
 	e.GET("/logout", auth.Logout)
 	e.POST("/register", auth.Register)
+	e.POST("/reset-password", auth.UpdatePasswordViaUrl)
 	e.GET("/create-checkout-session", payment.CreateCheckoutSession)
 	e.GET("/eth", eth.Ping)
 	e.POST("/payments/successhook", payment.OnPaymentAccepted)
