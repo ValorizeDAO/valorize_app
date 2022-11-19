@@ -39,6 +39,7 @@ func ConnectToChain(chainId string) (*ethclient.Client, error) {
 	infuraClientKey := map[string]string{
 		"1":      "https://mainnet.infura.io/v3/",
 		"3":      "https://ropsten.infura.io/v3/",
+		"5":      "https://goerli.infura.io/v3/",
 		"137":    "https://polygon-mainnet.infura.io/v3/",
 		"10":     "https://optimism-mainnet.infura.io/v3/",
 		"421611": "https://arbitrum-rinkeby.infura.io/v3/",

@@ -46,7 +46,7 @@ func (token *TokenHandler) Index(c echo.Context) error {
 		})
 	}
 	var userTokens []models.Token
-	token.server.DB.Where("user_id = ?", userData.ID).Table("tokens").Find(&userTokens)
+	token.server.DB.Where("user_id = ?", userData.ID).Where("chain_id != ?", 3).Table("tokens").Find(&userTokens)
 
 	return c.JSON(http.StatusOK, UserTokenIndexResponse{userTokens})
 }
